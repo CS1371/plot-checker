@@ -1,0 +1,6 @@
+Differences between testPlot2 and testPlot2_soln
+The XData in plot #1 is/are different
+The YData in plot #1 is/are different
+The ZData in plot #1 is/are different
+The Colors in plot #1 is/are different
+The Marker in plot #1 is/are different

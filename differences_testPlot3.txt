@@ -1,0 +1,2 @@
+Differences between testPlot3 and testPlot3_soln
+The Colors in plot #1 is/are different
