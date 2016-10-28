@@ -1,4 +1,4 @@
-function [same, details] = studentPlotCheck_new(funName,varargin)
+function [same, details] = plotCheck(funName,varargin)
 AXIS_TOL = .05; % The student's axis range can be off by this percent of the axis range and still be counted correct
 %% initial set up
 if verLessThan('matlab', 'R2015a')
