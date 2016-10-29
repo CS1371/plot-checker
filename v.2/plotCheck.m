@@ -1,5 +1,72 @@
+%% plotCheck compares the plot output of student and solution functions for equivalance
+%
+%   [same, details] = plotCheck(funcName, funcInputs ... )
+%
+%   Inputs:
+%       (char) funcName: The name of the function you wish to check, as a
+%           string (do NOT include '_soln')
+%       (variable) funcInputs: The remaining inputs to this function are the
+%           inputs that you would normally pass into the function that you
+%           are checking
+%
+%   Outputs:
+%       (logical) same: Whether or not your function produced a plot that is
+%           visually the same as the solution function
+%       (char) details: A string describing the differences (if any) that were
+%           found between the plots
+%
+%   Example:
+%       If you have a function called "testFunc" and the following test case:
+%
+%           testFunc(30, true, {'cats', 'dogs'})
+%
+%       Then to check the plot produced by "testFunc" against the solution
+%       function "testFunc_soln" for this test case you would run:
+%
+%           [same, details] = plotCheck('testFunc', 30, true, {'cats', 'dogs'})
+%
+%       After this completed running, same would be a logical value of whether
+%       or not the plots were the same and details will explain the differences
+%       that were found, if any.
+%
+%   Notes:
+%       Some things to watch out for that the plot checker occasionally has
+%       difficulty identifying:
+%
+%       1.  Incorrect colors interfering with data comparison
+%       2.  The order in which you plot overlapping elements interfering with
+%           color comparison
+%       3.  Small rounding errors causing axis ranges to be incorrect
+%
+%   Disclaimer:
+%       This is the first semester we have used this function, so you will
+%       likely come across cases where it does not work properly. In these
+%       situations, you can run the solution function, then run your function
+%       and look at the two plots. If you cannot identify ANY differences
+%       between the two plots, then you will get full credit for your
+%       submission. However, if you can see ANY differences between the plots,
+%       your function output does not match the solution.
+%
+%       To make this function better in the future, if you do come across a
+%       false negative or false positive, we ask that you email your solution
+%       code as an attachment to efoyle3@gatech.edu with the subject line
+%       "PLOT_CHECK_TEST_CASE". You can send multiple functions in one email if
+%       you encounter a problem for multiple functions. Sending your code is
+%       completely voluntary, but the more code we have to test the function on,
+%       the better it will be in the future!
+
 function [same, details] = plotCheck(funName,varargin)
-AXIS_TOL = .05; % The student's axis range can be off by this percent of the axis range and still be counted correct
+VERSION = 1.0; % Do not change unless updating code
+
+AXIS_TOL = .1; % The student's axis range can be off by this percent of the axis range and still be counted correct
+FIG_SIZE = 1200; % FIG_SIZE x FIG_SIZE will be used as the fiure size. Even though we are downsampling, this is important to fully capture all data even if there are several subplots
+
+%% check if user wants the version number
+if strcmp(funName, '-version')
+    same = VERSION;
+    return;
+end
+
 %% initial set up
 if verLessThan('matlab', 'R2015a')
     error('You must run the plot checker with MATLAB version R2015a or later.\nYou can visit software.oit.gatech.edu for the latest version of MATLAB.');
@@ -15,43 +82,58 @@ if date(2)==4 && date(3)==1 && rand < .1 % if it's April Fools, play the rick-ro
     end
     fprintf('Happy April Fools Day!\n');
 end
-close all %closes all the open figure windows.
+close all % closes all the open figure windows.
+
 %% store the solution plot and student plot in figure handles
 % first save the student plot
 if exist([funName, '.m'], 'file')
     set(0,'DefaultFigureVisible','off'); % hide newly created figures
+    warning off; %#ok<*WNOFF>
     try 
         figure
         feval(funName, varargin{:}); %Execute the function and all inputs of that function
         stud = gcf;% Give current figure handle (the same as a file handle for figures)
     catch
         set(0,'DefaultFigureVisible','on'); % reset default figure visibility
+        warning on; %#ok<*WNON>
         error('Your function produced an error');
     end
     set(0,'DefaultFigureVisible','on'); % reset default figure visibility
+    warning on;
 else
     error('Could not locate function %s.\nMake sure you are in the correct directory.', funName);
 end
-set(0, 'DefaultFigureVisible', 'off')
 
 % next save the solution plot
 if exist([funName, '_soln.m'], 'file')
+    set(0,'DefaultFigureVisible','off'); % hide newly created figures
+    warning off;
     try
         figure
         feval([funName '_soln'], varargin{:});% Execute the solution function
         soln = gcf;% get current figure handle
     catch
         set(0, 'DefaultFigureVisible', 'on');
+        warning on;
         error('The solution function produced an error');
     end
     set(0,'DefaultFigureVisible','on'); % reset default figure visibility
+    warning on;
 else
     error('Could not locate solution function %s_soln.\nMake sure it is in your current directory.', funName);
 end
+set(0,'DefaultFigureVisible','on'); % make sure default visibility is reset
+warning on;
 
 %% now start checking stuff
 same = true; % innocent until proven guilty
 details = '';
+
+% enlarge the figure size
+set(stud, 'Position', [0, 0, FIG_SIZE, FIG_SIZE]);
+set(stud, 'Color', [1 1 1]);
+set(soln, 'Position', [0, 0, FIG_SIZE, FIG_SIZE]);
+set(soln, 'Color', [1 1 1]);
 
 % get a vector of solution axies and student axies
 stud_children = stud.Children(:);
@@ -75,6 +157,9 @@ stud_children = stud_children(idx);
 soln_children = soln_children(idx);
 % check each subplot individually
 for i = 1:length(soln_children)
+    if mult
+        details = sprintf('%s\n\nSubplot %d:', details, i);
+    end
     soln_axis = soln_children(i);
     soln_axis.View = [0, 90]; % normalize the view
     
@@ -85,7 +170,7 @@ for i = 1:length(soln_children)
     diffs = {};
     if ~isequal(stud_axis.XLabel.String, soln_axis.XLabel.String)
         same = false;
-        diffs = [diffs, 'x-axis'];
+        diffs = [diffs, 'x-axis']; %#ok<*AGROW>
     end
     if ~isequal(stud_axis.YLabel.String, soln_axis.YLabel.String)
         same = false;
@@ -101,21 +186,13 @@ for i = 1:length(soln_children)
         if length(diffs) > 1
             diffs{end} = ['and ', diffs{end}];
         end
-        if mult % if there are multiple subplots, add which one we are currently dealing with to the details
-            details = sprintf('The %s label(s) in subplot %d differ(s) from the solution.', strjoin(diffs, ', '), i);
-        else
-            details = sprintf('The %s label(s) differ(s) from the solution.', strjoin(diffs, ', '));
-        end
+        details = sprintf('%s\nThe %s label(s) differ(s) from the solution.', details, strjoin(diffs, ', '));
     end
     
     % check the title
     if ~isequal(stud_axis.Title.String, soln_axis.Title.String)
         same = false;
-        if mult
-            details = sprintf('%s\nThe title in subplot %d differs from the soluiton.', details, i);
-        else
-            details = sprintf('%s\nThe title differs from the soluiton.', details);
-        end
+        details = sprintf('%s\nThe title differs from the solution.', details);
     end
     
     diffs = {};
@@ -145,14 +222,11 @@ for i = 1:length(soln_children)
         if length(diffs) > 1
             diffs{end} = ['and ', diffs{end}];
         end
-        if mult % if there are multiple subplots, add which one we are currently dealing with to the details
-            details = sprintf('%s\nThe %s range(s) in subplot %d differ(s) from the solution.', details, strjoin(diffs, ', '), i);
-        else
-            details = sprintf('%s\nThe %s range(s) differ(s) from the solution.', details, strjoin(diffs, ', '));
-        end
+        details = sprintf('%s\nThe %s range(s) differ(s) from the solution.', details, strjoin(diffs, ', '));
     end
     
-    [same, details] = visualCompare(soln_axis, stud_axis, same, details, mult, i);
+    % visual compare
+    [same, details] = visualCompare(soln_axis, stud_axis, same, details);
 end
 if same
     details = 'Your plot is identical to the solution function!';
@@ -164,15 +238,16 @@ end
 %% "visually" compare two plots
 % converts to b/w images to compare data
 % then compares histograms to determine color differences
-function [same, details] = visualCompare(soln_axis, stud_axis, same, details, mult, sub)
-SCALE = [100, 100]; % smaller numbers increase tolerance; both numbers should be the same. [100, 100] is enough to detect a single point difference
-DIFFERENCE_FACTOR = 10; % larger number increases tolerance. Approximately equals the number of points allowed to be different
-COLOR_TOL = 50; % larger number increase tolerance. Probably won't need to adjust this number
-
+function [same, details] = visualCompare(soln_axis, stud_axis, same, details)
+SCALE = [75, 75]; % smaller numbers increase tolerance; both numbers should be the same. [100, 100] is enough to detect a single point difference
+DIFFERENCE_FACTOR = 20; % larger number increases tolerance. This is the number of pixels in the downsampled and filtered image that can be different
+HIST_BINS = 16; % number of bins to use when creating color histograms
+COLOR_TOL = .1; % angle in degrees by which any two histogram vectors may differ and still be considered equal
 % first try to eliminate as many axis problems as possible
 soln_axis.Visible = 'off';
 stud_axis.Visible = 'off';
 
+% sets both axis limits to the extrema of the two
 if soln_axis.XLim(1) < stud_axis.XLim(1)
     stud_axis.XLim(1) = soln_axis.XLim(1);
 else
@@ -204,46 +279,37 @@ else
     soln_axis.ZLim(2) = stud_axis.ZLim(2);
 end
 
+% should probably expand the axies by a small percentage here so that
+% the convolution doesn't get messed up around the edges
+
 % convert the axis objects to images
 soln_img = imresize(frame2im(getframe(soln_axis)), SCALE);
 stud_img = imresize(frame2im(getframe(stud_axis)), SCALE);
 
-% compute the background color of the solution plot to get a threshold for converting to black and white
-intimg = soln_img(:, :, 1) + soln_img(:, :, 2) * 256 + soln_img(:, :, 3) * 256 ^ 2;
-most = mode(mode(intimg));
-[r, c] = find(intimg==most, 1); % look up the most common color
-pix = soln_img(r, c, :);
-SOLN_BW_THRESH = mean(pix) / 255;
+% convert to black and white image
+bw_soln = sum(soln_img, 3) == (255 * 3);
+bw_stud = sum(stud_img, 3) == (255 * 3);
 
-% do the same thing for the student plot
-intimg = stud_img(:, :, 1) + soln_img(:, :, 2) * 256 + soln_img(:, :, 3) * 256 ^ 2;
-most = mode(mode(intimg));
-[r, c] = find(intimg==most, 1); % look up the most common color
-pix = stud_img(r, c, :);
-STUD_BW_THRESH = mean(pix) / 255;
+% debugging
+% figure, imshow(bw_soln);
+% figure, imshow(bw_stud);
+% 
+% figure, imshow(bw_soln ~= bw_stud);
 
-% compare the plots visually
-fh = figure;
-set(fh, 'Visible', 'off');
-data_diff = sum(sum(im2bw(soln_img, SOLN_BW_THRESH) ~= im2bw(stud_img, STUD_BW_THRESH))); % calculate total difference
+% compare the plots "visually"
+data_diff = sum(sum(bw_soln ~= bw_stud)); % calculate total difference
 if data_diff > DIFFERENCE_FACTOR
     same = false;
-    if mult % if there are multiple subplots, add which one we are currently dealing with to the details
-        details = sprintf('%s\nThe data in subplot %d differs from the solution.', details, sub);
-    else
-        details = sprintf('%s\nThe data differs from the solution.', details);
-    end
+    details = sprintf('%s\nThe data values differ from the solution.\nCannot check colors until data is the same.', details);
 else
     for i = 1:size(soln_img, 3) % for each layer in the image
-        soln_hist = imhist(soln_img(:, :, i));
-        stud_hist = imhist(stud_img(:, :, i));
-        if sum(abs(soln_hist - stud_hist)) > COLOR_TOL
+        soln_hist = imhist(soln_img(:, :, i), HIST_BINS);
+        stud_hist = imhist(stud_img(:, :, i), HIST_BINS);
+        % calculate angle between these two vectors
+        th = acosd(dot(stud_hist, soln_hist) / (norm(stud_hist) * norm(soln_hist)));
+        if th > COLOR_TOL
             same = false;
-            if mult % if there are multiple subplots, add which one we are currently dealing with to the details
-                details = sprintf('%s\nThe plot colors in subplot %d differs from the solution.', details, sub);
-            else
-                details = sprintf('%s\nThe plot colors differ from the solution.', details);
-            end
+            details = sprintf('%s\nThe colors differ from the solution.', details);
             break; % once we find one channel that is wrong, we don't need to keep going
         end
     end
