@@ -2,7 +2,7 @@
 %
 % five lines, all passing
 function [passed, msg] = fiveLinePass_test
-    [passed, msg] = plotChecker(@fiveLinePass);
+    [passed, msg] = checkPlots(@fiveLinePass);
     if ~passed
         msg = sprintf('Expected passing; got %s', msg);
     end

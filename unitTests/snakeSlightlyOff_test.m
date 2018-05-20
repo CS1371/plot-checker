@@ -6,7 +6,7 @@
 %
 function [passed, msg] = snakeSlightlyOff_test
     coeffs = {1, 2, 3, 4, 5};
-    [passed, msg] = plotChecker(@snakeSlightlyOff, coeffs);
+    [passed, msg] = checkPlots(@snakeSlightlyOff, coeffs);
     if passed
         msg = 'Expected failure; got passing';
     end

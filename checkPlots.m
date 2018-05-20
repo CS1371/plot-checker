@@ -1,17 +1,17 @@
-%% plotChecker: Check Student plots against Solutions
+%% checkPlots: Check Student plots against Solutions
 %
-% plotChecker will return a logical and description, representing if it
+% checkPlots will return a logical and description, representing if it
 % passed or not. If the plots aren't equal, then it will describe why.
 %
-% E = plotChecker(F, I1, I2, ...) will use the function F and input
+% E = checkPlots(F, I1, I2, ...) will use the function F and input
 % arguments I1, I2, ... to check if the student's code produces the same
 % plots as the solution. E is true if they're equal, false otherwise.
 %
-% [E, M] = plotChecker(___) will do the same as above, and also return why
+% [E, M] = checkPlots(___) will do the same as above, and also return why
 % the plots were incorrect as a character vector in M. If E is true, M is
 % empty.
 %
-% [E, M, D] = plotChecker(___) will do the same as above, and also return
+% [E, M, D] = checkPlots(___) will do the same as above, and also return
 % the differing data, if possible. Data is given if it's possible to
 % quantitatively differentiate; XData, titles, etc.
 %
@@ -37,7 +37,7 @@
 % Any exceptions thrown by the student are caught and re-issued as
 % warnings.
 %
-function [eq, msg, data] = plotChecker(fun, varargin)
+function [eq, msg, data] = checkPlots(fun, varargin)
 %#ok<*LAXES>
     % try to convert to function handle
     if ischar(fun)

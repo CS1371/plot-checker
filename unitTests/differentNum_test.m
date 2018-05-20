@@ -6,31 +6,31 @@
 % Student has 1 plot, solution has no plots
 % Student has no plots, solution has no plots
 function [passed, msg] = differentNum_test
-    [passed, msg] = plotChecker(@differentNum_stud0soln0);
+    [passed, msg] = checkPlots(@differentNum_stud0soln0);
     if ~passed
         msg = sprintf('Expected passing for both 0; got %s', msg);
         return;
     end
-    passed = plotChecker(@differentNum_stud1soln0);
+    passed = checkPlots(@differentNum_stud1soln0);
     if passed
         msg = 'Expected failure for student 1 solution 0; got passing';
         passed = false;
         return;
     end
     
-    passed = plotChecker(@differentNum_stud0soln1);
+    passed = checkPlots(@differentNum_stud0soln1);
     if passed
         msg = 'Expected failure for student 0 solution 1; got passing';
         passed = false;
         return;
     end
-    passed = plotChecker(@differentNum_stud1soln2);
+    passed = checkPlots(@differentNum_stud1soln2);
     if passed
         msg = 'Expected failure for student 1 solution 2; got passing';
         passed = false;
         return;
     end
-    passed = plotChecker(@differentNum_stud2soln1);
+    passed = checkPlots(@differentNum_stud2soln1);
     if passed
         msg = 'Expected failure for student 2 solution 1; got passing';
         passed = false;
