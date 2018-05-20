@@ -518,6 +518,11 @@ classdef Plot < handle
                 areEqual = false;
                 return;
             end
+            
+            if ~isequal(this.Limits, that.Limits)
+                areEqual = false;
+                return;
+            end
 
             thisStruct = struct('XData', this.XData, 'YData', this.YData,...
                 'ZData', this.ZData, 'Color', this.Color, 'Legend', this.Legend,...
