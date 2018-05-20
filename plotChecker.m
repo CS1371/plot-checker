@@ -25,7 +25,7 @@
 % color to be ___, but got ____". You should run it after every fix to
 % ensure you've fixed all problems.
 %
-% The offending plot will always be shown side-by-side with its
+% The offending plot will be shown side-by-side with its
 % corresponding solution in a new figure window.
 %
 %%% Exceptions
@@ -105,6 +105,8 @@ function [eq, msg] = plotChecker(fun, varargin)
                     solns(n) = [];
                     studs(s) = [];
                     isFound = true;
+                    eq = true;
+                    msg = '';
                 end
             end
             if ~isFound

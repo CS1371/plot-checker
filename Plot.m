@@ -76,6 +76,9 @@ classdef Plot < handle
         LineStyle;
         IsAlien logical = false;
     end
+    properties (Access=private)
+        ROUNDOFF_ERROR = 5;
+    end
     methods
         function this = Plot(pHandle)
         %% Constructor
@@ -176,9 +179,9 @@ classdef Plot < handle
             zcell = {lines.ZData};
             
             % Round data to sigfig
-            xcell = cellfun(@(xx)(round(double(xx), Student.ROUNDOFF_ERROR)), xcell, 'uni', false);
-            ycell = cellfun(@(yy)(round(double(yy), Student.ROUNDOFF_ERROR)), ycell, 'uni', false);
-            zcell = cellfun(@(zz)(round(double(zz), Student.ROUNDOFF_ERROR)), zcell, 'uni', false);
+            xcell = cellfun(@(xx)(round(double(xx), this.ROUNDOFF_ERROR)), xcell, 'uni', false);
+            ycell = cellfun(@(yy)(round(double(yy), this.ROUNDOFF_ERROR)), ycell, 'uni', false);
+            zcell = cellfun(@(zz)(round(double(zz), this.ROUNDOFF_ERROR)), zcell, 'uni', false);
             
             % Remove data points that have NaN in any axis
             for i = 1:length(lines) % for each cell / line
@@ -493,7 +496,7 @@ classdef Plot < handle
                     'input is not a valid instance of Plot');
                 throw(ME);
             end
-            if this.isAlien || that.isAlien
+            if this.IsAlien || that.IsAlien
                 areEqual = false;
                 return;
             end
