@@ -77,7 +77,7 @@ classdef Plot < handle
     properties (Access=private)
         ROUNDOFF_ERROR = 5;
     end
-    methods
+    methods (Hidden = true)
         function this = Plot(pHandle)
         %% Constructor
         %
@@ -435,7 +435,7 @@ classdef Plot < handle
             end
         end
     end
-    methods (Access=public)
+    methods (Hidden = true)
         function areEqual = equals(this,that)
         %% equals: Checks if the given plot is equal to this plot
         %
