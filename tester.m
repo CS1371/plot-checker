@@ -26,11 +26,14 @@ function status = tester(varargin)
     orig = cd(fileparts(mfilename('fullpath')));
     cleaner = onCleanup(@()(cd(orig)));
     if isempty(varargin)
-        inputs = [dir('*.m'); dir('*.p')];
+        inputs = dir('./unitTests/*.m');
         inputs = {inputs.name};
     else
         inputs = varargin;
     end
+    
+    % add the right path
+    addpath(genPath(pwd));
     
     handles = cellfun(@converter, inputs, 'uni', false);
     
@@ -91,7 +94,7 @@ function h = converter(inp)
         inp = char(inp);
     end
     if ischar(inp)
-        if endsWith(inp, '.m') || endsWith(inp, '.p')
+        if endsWith(inp, '.m')
             inp = inp(1:end-3);
         end
         h = str2func(inp);
