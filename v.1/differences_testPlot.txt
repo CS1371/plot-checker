@@ -1,2 +1,0 @@
-Differences between testPlot and testPlot_soln
-Your code produced the same plot as the solution file!

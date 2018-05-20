@@ -1,2 +1,0 @@
-Differences between testCase3 and testCase3_soln
-The Colors in plot #4 is/are different

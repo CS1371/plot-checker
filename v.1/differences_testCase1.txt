@@ -1,2 +1,0 @@
-Differences between testCase1 and testCase1_soln
-Your code produced the same plot as the solution file!
