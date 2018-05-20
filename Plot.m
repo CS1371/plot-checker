@@ -20,8 +20,6 @@
 %
 % * PlotBox: A 1X3 vector representing the relative axis scale factors
 %
-% * Image: An image taken of the plot, as an MxNx3 uint8 array.
-%
 % * Legend: A string array of all the names in the legend
 %
 % * XData: A cell array of vectors that represents all XData points plotted
@@ -66,7 +64,6 @@ classdef Plot < handle
         ZLabel;
         Position;
         PlotBox;
-        Image;
         Legend;
         XData;
         YData;
@@ -75,6 +72,7 @@ classdef Plot < handle
         Marker;
         LineStyle;
         IsAlien logical = false;
+        Limits;
     end
     properties (Access=private)
         ROUNDOFF_ERROR = 5;
@@ -146,17 +144,7 @@ classdef Plot < handle
             this.ZLabel = pHandle.ZLabel.String;
             this.Position = pHandle.Position;
             this.PlotBox = pHandle.PlotBoxAspectRatio;
-            
-            tmp = figure();
-            par = pHandle.Parent;
-            pHandle.Parent = tmp;
-            imgstruct = getframe(tmp);
-            this.Image = imgstruct.cdata;
-            
-            pHandle.Parent = par;
-            close(tmp);
-            delete(tmp);
-
+            this.Limits = [pHandle.XLim, pHandle.YLim, pHandle.ZLim];
             lines = allchild(pHandle);
             if isempty(lines)
                 this.XData = {};
@@ -560,58 +548,6 @@ classdef Plot < handle
                 areEqual = true;
                 return;
             end
-        end
-        function [html] = generateFeedback(this, that)
-        %% generateFeedback: Generates HTML feedback for the student and solution Plot.
-        %
-        % generateFeedback will return the feedback for the student's plot.
-        %
-        % [HTML] = generateFeedback(PLOT) will return a character vector in
-        % HTML that contains the markup for HTML. The contents of this
-        % vector will be the feedback associated with a student's plot.
-        %
-        %%% Remarks
-        %
-        % This function will output a character after calling the
-        % generateFeedback method with input as the student plot submission
-        % and the solution plot.
-        %
-        %%% Exceptions
-        %
-        % An AUTOGRADER:PLOT:GENERATEFEEDBACK:MISSINGPLOT exception will be
-        % thrown if the student or solution plots are missing from the
-        % generateFeedback method call.
-        %
-        %%% Unit Tests
-        %
-        % When called, the generateFeedback method will check the student
-        % Plot against the solution Plot. If the student plot matches the
-        % solution plot, the character HTML vector will contain both the
-        % solution and student plot. It will also contain confirmation that
-        % the plot was correct.
-        %
-        % If the student plot does not matches the solution plot, the
-        % character HTML vector will contain both the solution and student
-        % plot. It will also contain a description of why the student plot
-        % is not correct, referencing the solution plot as needed.
-        %
-        % An AUTOGRADER:Plot:generateFeedback:noPlot exception will be
-        % thrown if generateFeedback is called with only one or no input
-        % Plots.
-        %
-        if ~isa(that,'Plot')
-            ME = MException('AUTOGRADER:Plot:generateFeedback:noPlot',...
-                'input is not a valid instance of Plot');
-            throw(ME);
-        end
-        studPlot = img2base64(this.Image);
-        solnPlot = img2base64(that.Image);
-        html = sprintf(['<div class="row"><div class="col-md-6 text-center">', ...
-            '<h2 class="text-center">Your Plot</h2><img class="img-fluid img-thumbnail" src="%s">', ...
-            '</div><div class="col-md-6 text-center"><h2 class="text-center">Solution Plot</h2>', ...
-            '<img class="img-fluid img-thumbnail" src="%s"></div></div>'],...
-            studPlot, solnPlot);
-
         end
     end
 end

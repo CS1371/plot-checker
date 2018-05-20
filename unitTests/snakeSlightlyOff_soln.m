@@ -1,4 +1,4 @@
-function plotter1_soln(coeffs)
+function snakeSlightlyOff_soln(coeffs)
 hold on
 for i = 1:length(coeffs)
     curpoly = coeffs{i};

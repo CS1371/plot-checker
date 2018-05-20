@@ -11,6 +11,10 @@
 % the plots were incorrect as a character vector in M. If E is true, M is
 % empty.
 %
+% [E, M, D] = plotChecker(___) will do the same as above, and also return
+% the differing data, if possible. Data is given if it's possible to
+% quantitatively differentiate; XData, titles, etc.
+%
 %%% Remarks
 %
 % F is flexible. You can pass in a character vector that represents the
@@ -33,12 +37,13 @@
 % Any exceptions thrown by the student are caught and re-issued as
 % warnings.
 %
-function [eq, msg] = plotChecker(fun, varargin)
+function [eq, msg, data] = plotChecker(fun, varargin)
+%#ok<*LAXES>
     % try to convert to function handle
     if ischar(fun)
         % if has extension, remove
         if endsWith(fun, '.m')
-            fun = fun(1:end-3);
+            fun = fun(1:end-2);
         end
         fun = str2func(fun);
     end
@@ -107,6 +112,8 @@ function [eq, msg] = plotChecker(fun, varargin)
                     isFound = true;
                     eq = true;
                     msg = '';
+                    data.student = [];
+                    data.solution = [];
                 end
             end
             if ~isFound
@@ -132,7 +139,7 @@ function [eq, msg] = plotChecker(fun, varargin)
                     end
                 end
                 
-                if ~isempty(studPlot)
+                if ~isFound
                     % positions never matched; try next (X, Y, Z exact)
                     for s = numel(studs):-1:1
                         studPlot = studs(s);
@@ -266,14 +273,22 @@ function [eq, msg] = plotChecker(fun, varargin)
                 %   axes
                 %   Title
                 %   Labels
+                data.student = [];
+                data.solution = [];
                 if ~isequal(studPlot.Position, solnPlot.Position)
                     msg = 'Your plot is wrongly positioned (did you remember to call subplot?)';
                 elseif ~isequal(studPlot.XData, solnPlot.XData)
                     msg = 'Your X values are not correct';
+                    data.student = studPlot.XData;
+                    data.solution = solnPlot.XData;
                 elseif ~isequal(studPlot.YData, solnPlot.YData)
                     msg = 'Your Y values are not correct';
+                    data.student = studPlot.YData;
+                    data.solution = solnPlot.YData;
                 elseif ~isequal(studPlot.ZData, solnPlot.ZData)
                     msg = 'Your Z values are not correct';
+                    data.student = studPlot.ZData;
+                    data.solution = solnPlot.ZData;
                 elseif ~isequal(studPlot.LineStyle, solnPlot.LineStyle)
                     msg = ['Your Line Styles are not correct ', ...
                         '(line styles are dashed, solid, none, etc. ', ...
@@ -289,12 +304,20 @@ function [eq, msg] = plotChecker(fun, varargin)
                         'You might want to make sure you''ve set the axes correctly)'];
                 elseif ~isequal(studPlot.Title, solnPlot.Title)
                     msg = 'Your title is incorrect';
+                    data.student = studPlot.Title;
+                    data.solution = solnPlot.Title;
                 elseif ~isequal(studPlot.XLabel, solnPlot.XLabel)
                     msg = 'Your x label is incorrect';
+                    data.student = studPlot.XLabel;
+                    data.solution = solnPlot.XLabel;
                 elseif ~isequal(studPlot.YLabel, solnPlot.YLabel)
                     msg = 'Your y label is incorrect';
+                    data.student = studPlot.YLabel;
+                    data.solution = solnPlot.YLabel;
                 elseif ~isequal(studPlot.ZLabel, solnPlot.ZLabel)
                     msg = 'Your z label is incorrect';
+                    data.student = studPlot.ZLabel;
+                    data.solution = solnPlot.ZLabel;
                 elseif studPlot.IsAlien
                     msg = ['Your plots are nearly identical; however, you''ve ', ...
                         'Plotted something that isn''t a line and/or point. (', ...
@@ -310,12 +333,68 @@ function [eq, msg] = plotChecker(fun, varargin)
                         'to a TA at helpdesk OR email your TA with your code'];
                 end
                 % show the two plots
-                subplot(1, 2, 1);
-                imshow(studPlot.Image);
-                title('Student Plot');
-                subplot(1, 2, 2);
-                imshow(solnPlot.Image);
-                title('Solution Plot');
+                f = figure('Name', 'Student''s Plot', 'NumberTitle', 'off');
+                ax = axes(f);
+                hold(ax, 'on');
+                % recreate plot
+                title(ax, studPlot.Title);
+                xlabel(ax, studPlot.XLabel);
+                ylabel(ax, studPlot.YLabel);
+                zlabel(ax, studPlot.ZLabel);
+                
+                % for each set of data, plot. 
+                for d = 1:numel(studPlot.XData)
+                    % if 3, plot3;
+                    xx = studPlot.XData{d};
+                    yy = studPlot.YData{d};
+                    zz = studPlot.ZData{d};
+                    if isempty(zz)
+                        p = plot(ax, xx, yy, ...
+                            [studPlot.Marker{d} studPlot.LineStyle{d}]);
+                        p.Color = studPlot.Color{d};
+                    else
+                        p = plot3(ax, xx, yy, zz, ...
+                            [studPlot.Marker{d} studPlot.LineStyle{d}]);
+                        p.Color = studPlot.Color{d};
+                    end
+                end
+                
+                ax.XLim = studPlot.Limits(1:2);
+                ax.YLim = studPlot.Limits(3:4);
+                ax.ZLim = studPlot.Limits(5:6);
+                ax.Position = studPlot.Position;
+                ax.PlotBoxAspectRatio = studPlot.PlotBox;
+                
+                f = figure('Name', 'Solution''s Plot', 'NumberTitle', 'off');
+                ax = axes(f);
+                hold(ax, 'on');
+                % recreate plot
+                title(ax, solnPlot.Title);
+                xlabel(ax, solnPlot.XLabel);
+                ylabel(ax, solnPlot.YLabel);
+                zlabel(ax, solnPlot.ZLabel);
+                % for each set of data, plot. 
+                for d = 1:numel(solnPlot.XData)
+                    % if 3, plot3;
+                    xx = solnPlot.XData{d};
+                    yy = solnPlot.YData{d};
+                    zz = solnPlot.ZData{d};
+                    if isempty(zz)
+                        p = plot(ax, xx, yy, ...
+                            [solnPlot.Marker{d} solnPlot.LineStyle{d}]);
+                        p.Color = solnPlot.Color{d};
+                    else
+                        p = plot3(ax, xx, yy, zz, ...
+                            [solnPlot.Marker{d} solnPlot.LineStyle{d}]);
+                        p.Color = solnPlot.Color{d};
+                    end
+                end
+                ax.XLim = solnPlot.Limits(1:2);
+                ax.YLim = solnPlot.Limits(3:4);
+                ax.ZLim = solnPlot.Limits(5:6);
+                ax.Position = solnPlot.Position;
+                ax.PlotBoxAspectRatio = solnPlot.PlotBox;
+                return;
             end
         end
     end
@@ -331,6 +410,8 @@ function plots = populatePlots()
         for i = 1:(numel(pHandles) - 1)
             plots(i) = Plot(pHandles(i));
         end
+    else
+        plots = [];
     end
 end
     

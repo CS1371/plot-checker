@@ -24,56 +24,54 @@
 function status = tester(varargin)
     % change to our current dir for testing;
     orig = cd(fileparts(mfilename('fullpath')));
-    cleaner = onCleanup(@()(cd(orig)));
+    generateTests();
+    cleaner = onCleanup(@()(clean(orig)));
     if isempty(varargin)
-        inputs = dir('./unitTests/*.m');
+        inputs = dir(['.' filesep 'unitTests' filesep '*_test.m']);
         inputs = {inputs.name};
     else
         inputs = varargin;
     end
     
     % add the right path
-    addpath(genPath(pwd));
-    
-    handles = cellfun(@converter, inputs, 'uni', false);
-    
+        
     isParallel = ~isempty(gcp('nocreate'));
+    addpath(genpath(pwd));
+        
+    handles = cellfun(@converter, inputs, 'uni', false);
     
     status = struct('name', cell(1, numel(handles)), ...
         'status', cell(1, numel(handles)), ...
         'reason', cell(1, numel(handles)));
     for h = numel(handles):-1:1
         % set up call
-        fun = handles(h);
-        status(h).name = func2str(fun);
+        fun = handles{h};
+        status(h).name = strtok(func2str(fun), '_');
         if isParallel
             workers(h) = parfeval(@runTest, 2, fun);
         else
-            [status(h).status, status(h).reason] = fun();
+            [status(h).status, status(h).reason] = runTest(fun);
         end
     end
     if isParallel
-        workers.wait();
-        outs = workers.fetchOutputs();
-        for h = 1:size(outs, 1)
-            status(h).status = outs{h, 2};
-            status(h).reason = outs{h, 3};
+        while ~all([workers.Read])
+            [idx, s, r] = workers.fetchNext();
+            status(idx).status = s;
+            status(idx).reason = r;
         end
     end
     
     if nargout == 0
-        STATUS = {'Passed', 'Failed'};
         % for each test, print out
         for t = 1:numel(status)
             if status(t).status
-                fid = 1;
+                fprintf(1, 'Test %s: Passed\n', ...
+                    status(t).name);
             else
-                fid = 2;
+                fprintf(2, 'Test %s: Failed - %s\n', ...
+                    status(t).name, ...
+                    status(t).reason);
             end
-            fprintf(fid, 'Test %s:\n\tStatus: %s\n\tReason: %s\n', ...
-                status(t).name, ...
-                STATUS{status(t).status + 1}, ...
-                status(t).reason);
         end
         clear('status');
     end
@@ -95,7 +93,7 @@ function h = converter(inp)
     end
     if ischar(inp)
         if endsWith(inp, '.m')
-            inp = inp(1:end-3);
+            inp = inp(1:end-2);
         end
         h = str2func(inp);
     elseif isa(inp, 'function_handle')
@@ -105,4 +103,10 @@ function h = converter(inp)
             sprintf('Expected a string or function_handle; got %s', ...
             class(inp))));
     end
+end
+
+function clean(orig)
+    % delete p codes
+    delete(['.' filesep 'unitTests' filesep '*_soln.p']);
+    cd(orig);
 end

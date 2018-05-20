@@ -1,0 +1,3 @@
+function differentNum_stud1soln0_soln
+
+end
