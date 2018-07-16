@@ -42,7 +42,9 @@ function [eq, msg, data] = checkPlots(fun, varargin)
     % try to convert to function handle
     if ischar(fun)
         % if has extension, remove
-        if endsWith(fun, '.m')
+        % can't use endsWith because students might not have 2016 or
+        % later... UGHHHHH
+        if length(fun) > 2 && strcmp(fun(end-2:end), '.m')
             fun = fun(1:end-2);
         end
         fun = str2func(fun);
@@ -122,10 +124,10 @@ function [eq, msg, data] = checkPlots(fun, varargin)
                 
                 % Priorities:
                 %   Position (subplot)
-                %   XData, YData, ZData (exact)
-                %   Colors (Exact)
-                %   XData, YData, ZData (amount)
-                %   Number of lines (Exact)
+                %   PointData
+                %   SegmentData
+                %   # Points
+                %   # Segments
                 %   PlotBox
                 %   Title
                 %   Xlabel, Ylabel, Zlabel
@@ -140,22 +142,31 @@ function [eq, msg, data] = checkPlots(fun, varargin)
                 end
                 
                 if ~isFound
-                    % positions never matched; try next (X, Y, Z exact)
+                    % positions never matched; try next (Segments exact)
+                    % Roll Call
+                    % for each line segment in that, see if found in this
+                    
                     for s = numel(studs):-1:1
                         studPlot = studs(s);
-                        % compare X Data exact (BUT not if both empty!)
-                        if isequal(studPlot.XData, solnPlot.XData) && ...
-                                ~all(cellfun(@isempty, studPlot.XData))
-                            isFound = true;
-                            break;
+                        that = solnPlot;
+                        thatSegments = that.Segments;
+                        thisSegments = studPlot.Segments;
+                        for i = 1:numel(thatSegments)
+                            % for each in this, go until we have found it. Cannot
+                            % delete (for now) because not necessarily unique!!
+                            areEqual = false;
+                            for j = 1:numel(thisSegments)
+                                if isequal(thatSegments(i), thisSegments(j))
+                                    areEqual = true;
+                                    break;
+                                end
+                            end
+                            if ~areEqual
+                                % not found; not equal!
+                                break;
+                            end
                         end
-                        if isequal(studPlot.YData, solnPlot.YData) && ...
-                                ~all(cellfun(@isempty, studPlot.YData))
-                            isFound = true;
-                            break;
-                        end
-                        if isequal(studPlot.YData, solnPlot.YData) && ...
-                                ~all(cellfun(@isempty, studPlot.YData))
+                        if areEqual
                             isFound = true;
                             break;
                         end
@@ -163,10 +174,30 @@ function [eq, msg, data] = checkPlots(fun, varargin)
                 end
                 
                 if ~isFound
-                    % X, Y, Z exact never matched; try next (Colors, exact)
+                    % Segments (Exact) never matched; try next (Points exact)
+                    % Point Call
+                    % for each point set, see if found in this
                     for s = numel(studs):-1:1
                         studPlot = studs(s);
-                        if isequal(studPlot.Color, solnPlot.Color)
+                        that = solnPlot;
+                        thatPoints = that.Points;
+                        thisPoints = studPlot.Points;
+                        for i = 1:numel(thatPoints)
+                            % for each in this, go until we have found it. Cannot
+                            % delete (for now) because not necessarily unique!!
+                            areEqual = false;
+                            for j = 1:numel(thisPoints)
+                                if isequal(thatPoints(i), thisPoints(j))
+                                    areEqual = true;
+                                    break;
+                                end
+                            end
+                            if ~areEqual
+                                % not found; not equal!
+                                break;
+                            end
+                        end
+                        if areEqual
                             isFound = true;
                             break;
                         end
@@ -174,47 +205,28 @@ function [eq, msg, data] = checkPlots(fun, varargin)
                 end
                 
                 if ~isFound
-                    % Colors never matched; try next (X, Y, Z amount)
+                    % Points (Exact) never matched; try next (# segs)
                     for s = numel(studs):-1:1
                         studPlot = studs(s);
-                        % get numels of XData
-                        if all(...
-                                cellfun(@numel, studPlot.Xdata) == ...
-                                cellfun(@numel, solnPlot.XData)) && ...
-                                all(cellfun(@numel, studPlot.XData) ~= 0)
-                            % all numels are the same; engage
-                            isFound = true;
-                            break;
-                        end
-                        if all(...
-                                cellfun(@numel, studPlot.Ydata) == ...
-                                cellfun(@numel, solnPlot.YData)) && ...
-                                all(cellfun(@numel, studPlot.YData) ~= 0)
-                            % all numels are the same; engage
-                            isFound = true;
-                            break;
-                        end
-                        if all(...
-                                cellfun(@numel, studPlot.Zdata) == ...
-                                cellfun(@numel, solnPlot.ZData)) && ...
-                                all(cellfun(@numel, studPlot.ZData) ~= 0)
-                            % all numels are the same; engage
-                            isFound = true;
-                            break;
-                        end
-                    end     
-                end
-                
-                if ~isFound
-                    % X, Y, Z amount exact never matched; try next (# of lines)
-                    for s = numel(studs):-1:1
-                        studPlot = studs(s);
-                        if numel(studPlot.LineStyle) == numel(solnPlot.LineStyle)
+                        if numel(studPlot.Segments) == numel(solnPlot.Segments)
                             isFound = true;
                             break;
                         end
                     end
                 end
+                
+                if ~isFound
+                    % # segments never matched; try next (# points)
+                    for s = numel(studs):-1:1
+                        studPlot = studs(s);
+                        if numel(studPlot.Points) == numel(solnPlot.Points)
+                            isFound = true;
+                            break;
+                        end
+                    end
+                end
+                
+                
                 
                 if ~isFound
                     % # of lines never matched; try next (PlotBox)
@@ -263,6 +275,53 @@ function [eq, msg, data] = checkPlots(fun, varargin)
                     warning('We couldn''t find a good match for this plot, so take any feedback with a grain of salt');
                 end
                 eq = false;
+                
+                segmentMismatch = false;
+                thatSegments = solnPlot.Segments;
+                thisSegments = studPlot.Segments;
+                for i = 1:numel(thatSegments)
+                    % for each in this, go until we have found it. Cannot
+                    % delete (for now) because not necessarily unique!!
+                    areEqual = false;
+                    for j = 1:numel(thisSegments)
+                        if isequal(thatSegments(i), thisSegments(j))
+                            areEqual = true;
+                            break;
+                        end
+                    end
+                    if ~areEqual
+                        % not found; not equal!
+                        data.student = [];
+                        data.solution = thatSegments(i);
+                        segmentMismatch = true;
+                        break;
+                    else
+
+                    end
+                end
+                pointMismatch = false;
+                thatPoints = solnPlot.Points;
+                thisPoints = studPlot.Points;
+                for i = 1:numel(thatPoints)
+                    % for each in this, go until we have found it. Cannot
+                    % delete (for now) because not necessarily unique!!
+                    areEqual = false;
+                    for j = 1:numel(thatPoints)
+                        if isequal(thatPoints(i), thisPoints(j))
+                            areEqual = true;
+                            break;
+                        end
+                    end
+                    if ~areEqual
+                        % not found; not equal!
+                        data.student = [];
+                        data.solution = thatPoints(i);
+                        pointMismatch = true;
+                        break;
+                    else
+
+                    end
+                end
                 % get right message
                 % Priority for checking:
                 %   Position
@@ -277,26 +336,10 @@ function [eq, msg, data] = checkPlots(fun, varargin)
                 data.solution = [];
                 if ~isequal(studPlot.Position, solnPlot.Position)
                     msg = 'Your plot is wrongly positioned (did you remember to call subplot?)';
-                elseif ~isequal(studPlot.XData, solnPlot.XData)
-                    msg = 'Your X values are not correct';
-                    data.student = studPlot.XData;
-                    data.solution = solnPlot.XData;
-                elseif ~isequal(studPlot.YData, solnPlot.YData)
-                    msg = 'Your Y values are not correct';
-                    data.student = studPlot.YData;
-                    data.solution = solnPlot.YData;
-                elseif ~isequal(studPlot.ZData, solnPlot.ZData)
-                    msg = 'Your Z values are not correct';
-                    data.student = studPlot.ZData;
-                    data.solution = solnPlot.ZData;
-                elseif ~isequal(studPlot.LineStyle, solnPlot.LineStyle)
-                    msg = ['Your Line Styles are not correct ', ...
-                        '(line styles are dashed, solid, none, etc. ', ...
-                        'Run help plot for more information'];
-                elseif ~isequal(studPlot.Marker, solnPlot.Marker)
-                    msg = ['Your markers are not correct ', ...
-                        '(markers are asterisk, pentagram, point, etc. ', ...
-                        'Run help plot for more information'];
+                elseif segmentMismatch
+                    msg = 'A line segment was not found';
+                elseif pointMismatch
+                    msg = 'A Point Segment was not found';
                 elseif ~isequal(studPlot.PlotBox, solnPlot.PlotBox)
                     msg = ['Your axes (limits and/or scaling) aren''t correct ', ...
                         '(axes limits and scaling are affected by things ', ...
@@ -342,22 +385,39 @@ function [eq, msg, data] = checkPlots(fun, varargin)
                 ylabel(ax, studPlot.YLabel);
                 zlabel(ax, studPlot.ZLabel);
                 
-                % for each set of data, plot. 
-                for d = 1:numel(studPlot.XData)
-                    % if 3, plot3;
-                    xx = studPlot.XData{d};
-                    yy = studPlot.YData{d};
-                    zz = studPlot.ZData{d};
+                % for each set of data, plot.
+                % for each point, plot
+                for pt = 1:numel(studPlot.Points)
+                    point = studPlot.Points(pt);
+                    x = point.XData;
+                    y = point.YData;
+                    z = point.ZData;
+                    if isempty(z)
+                        p = plot(ax, x, y, ...
+                            [point.Marker point.LineStyle]);
+                    else
+                        p = plot3(ax, x, y, z, ...
+                            [point.Marker point.LineStyle]);
+                    end
+                    p.Color = point.Color;
+                end
+                
+                % for each segment, plot
+                for s = 1:numel(studPlot.Segments)
+                    seg = studPlot.Segments(s);
+                    xx = seg.Segment{1};
+                    yy = seg.Segment{2};
+                    zz = seg.Segment{3};
                     if isempty(zz)
                         p = plot(ax, xx, yy, ...
-                            [studPlot.Marker{d} studPlot.LineStyle{d}]);
-                        p.Color = studPlot.Color{d};
+                            [seg.Marker seg.LineStyle]);
                     else
-                        p = plot3(ax, xx, yy, zz, ...
-                            [studPlot.Marker{d} studPlot.LineStyle{d}]);
-                        p.Color = studPlot.Color{d};
+                        p = plot(ax, xx, yy, zz, ...
+                            [seg.Marker seg.LineStyle]);
                     end
+                    p.Color = seg.Color;
                 end
+                
                 
                 ax.XLim = studPlot.Limits(1:2);
                 ax.YLim = studPlot.Limits(3:4);
@@ -373,22 +433,38 @@ function [eq, msg, data] = checkPlots(fun, varargin)
                 xlabel(ax, solnPlot.XLabel);
                 ylabel(ax, solnPlot.YLabel);
                 zlabel(ax, solnPlot.ZLabel);
-                % for each set of data, plot. 
-                for d = 1:numel(solnPlot.XData)
-                    % if 3, plot3;
-                    xx = solnPlot.XData{d};
-                    yy = solnPlot.YData{d};
-                    zz = solnPlot.ZData{d};
+                % for each point, plot
+                for pt = 1:numel(solnPlot.Points)
+                    point = solnPlot.Points(pt);
+                    x = point.XData;
+                    y = point.YData;
+                    z = point.ZData;
+                    if isempty(z)
+                        p = plot(ax, x, y, ...
+                            [point.Marker point.LineStyle]);
+                    else
+                        p = plot3(ax, x, y, z, ...
+                            [point.Marker point.LineStyle]);
+                    end
+                    p.Color = point.Color;
+                end
+                
+                % for each segment, plot
+                for s = 1:numel(solnPlot.Segments)
+                    seg = solnPlot.Segments(s);
+                    xx = seg.Segment{1};
+                    yy = seg.Segment{2};
+                    zz = seg.Segment{3};
                     if isempty(zz)
                         p = plot(ax, xx, yy, ...
-                            [solnPlot.Marker{d} solnPlot.LineStyle{d}]);
-                        p.Color = solnPlot.Color{d};
+                            [seg.Marker seg.LineStyle]);
                     else
-                        p = plot3(ax, xx, yy, zz, ...
-                            [solnPlot.Marker{d} solnPlot.LineStyle{d}]);
-                        p.Color = solnPlot.Color{d};
+                        p = plot(ax, xx, yy, zz, ...
+                            [seg.Marker seg.LineStyle]);
                     end
+                    p.Color = seg.Color;
                 end
+                
                 ax.XLim = solnPlot.Limits(1:2);
                 ax.YLim = solnPlot.Limits(3:4);
                 ax.ZLim = solnPlot.Limits(5:6);
