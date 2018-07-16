@@ -57,6 +57,7 @@ classdef Plot < handle
     end
     properties (Constant)
         POSITION_MARGIN = 0.05;
+        ROUNDOFF_ERROR = 5;
     end
     properties (Access=private)
         isAlien logical = false;
@@ -127,11 +128,11 @@ classdef Plot < handle
             this.YLabel = pHandle.YLabel.String;
             this.ZLabel = pHandle.ZLabel.String;
             this.Position = round(pHandle.Position, ...
-                Student.ROUNDOFF_ERROR);
+                this.ROUNDOFF_ERROR);
             this.PlotBox = round(pHandle.PlotBoxAspectRatio, ...
-                Student.ROUNDOFF_ERROR);
+                this.ROUNDOFF_ERROR);
             this.Limits = round([pHandle.XLim, pHandle.YLim, pHandle.ZLim], ...
-                Student.ROUNDOFF_ERROR);
+                this.ROUNDOFF_ERROR);
             
             tmp = figure();
             par = pHandle.Parent;
@@ -160,9 +161,9 @@ classdef Plot < handle
             zcell = {lines.ZData};
             
             % Round data to sigfig
-            xcell = cellfun(@(xx)(round(double(xx), Student.ROUNDOFF_ERROR)), xcell, 'uni', false);
-            ycell = cellfun(@(yy)(round(double(yy), Student.ROUNDOFF_ERROR)), ycell, 'uni', false);
-            zcell = cellfun(@(zz)(round(double(zz), Student.ROUNDOFF_ERROR)), zcell, 'uni', false);
+            xcell = cellfun(@(xx)(round(double(xx), Plot.ROUNDOFF_ERROR)), xcell, 'uni', false);
+            ycell = cellfun(@(yy)(round(double(yy), Plot.ROUNDOFF_ERROR)), ycell, 'uni', false);
+            zcell = cellfun(@(zz)(round(double(zz), Plot.ROUNDOFF_ERROR)), zcell, 'uni', false);
             
             % Remove data points that have NaN in any axis
             for i = 1:length(lines) % for each cell / line
