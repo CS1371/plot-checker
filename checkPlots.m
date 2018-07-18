@@ -147,28 +147,25 @@ function [eq, msg, data] = checkPlots(fun, varargin)
                     % for each line segment in that, see if found in this
                     
                     for s = numel(studs):-1:1
-                        studPlot = studs(s);
-                        that = solnPlot;
-                        thatSegments = that.Segments;
-                        thisSegments = studPlot.Segments;
-                        for i = 1:numel(thatSegments)
-                            % for each in this, go until we have found it. Cannot
-                            % delete (for now) because not necessarily unique!!
-                            areEqual = false;
-                            for j = 1:numel(thisSegments)
-                                if isequal(thatSegments(i), thisSegments(j))
-                                    areEqual = true;
-                                    break;
+                        studSegs = studs(s).Segments;
+                        solnSegs = solnPlot.Segments;
+                        % search through
+                        for i = numel(solnSegs):-1:1
+                            seg = solnSegs(i);
+                            for j = numel(studSegs):-1:1
+                                if isequal(seg, studSegs(j))
+                                    solnSegs(i) = [];
+                                    studSegs(j) = [];
+                                    isFound = true;
                                 end
                             end
-                            if ~areEqual
-                                % not found; not equal!
+                            if ~isFound
                                 break;
                             end
                         end
-                        if areEqual
-                            isFound = true;
-                            break;
+                        % if any left, still not equal!
+                        if ~isempty(studSegs) || ~isempty(solnSegs)
+                            isFound = false;
                         end
                     end
                 end
@@ -178,28 +175,25 @@ function [eq, msg, data] = checkPlots(fun, varargin)
                     % Point Call
                     % for each point set, see if found in this
                     for s = numel(studs):-1:1
-                        studPlot = studs(s);
-                        that = solnPlot;
-                        thatPoints = that.Points;
-                        thisPoints = studPlot.Points;
-                        for i = 1:numel(thatPoints)
-                            % for each in this, go until we have found it. Cannot
-                            % delete (for now) because not necessarily unique!!
-                            areEqual = false;
-                            for j = 1:numel(thisPoints)
-                                if isequal(thatPoints(i), thisPoints(j))
-                                    areEqual = true;
-                                    break;
+                        studPoints = studs(s).Points;
+                        solnPoints = solnPlot.Points;
+                        % search through
+                        for i = numel(solnPoints):-1:1
+                            pt = solnPoints(i);
+                            for j = numel(studPoints):-1:1
+                                if isequal(pt, studPoints(j))
+                                    solnPoints(i) = [];
+                                    studPoints(j) = [];
+                                    isFound = true;
                                 end
                             end
-                            if ~areEqual
-                                % not found; not equal!
+                            if ~isFound
                                 break;
                             end
                         end
-                        if areEqual
-                            isFound = true;
-                            break;
+                        % if any left, still not equal!
+                        if ~isempty(studPoints) || ~isempty(solnPoints)
+                            isFound = false;
                         end
                     end
                 end
@@ -275,52 +269,73 @@ function [eq, msg, data] = checkPlots(fun, varargin)
                     warning('We couldn''t find a good match for this plot, so take any feedback with a grain of salt');
                 end
                 eq = false;
-                
+                % for each soln segment, check if stud seg exists; delete
+                % from both if necessary
+                solnSegs = solnPlot.Segments;
+                studSegs = studPlot.Segments;
                 segmentMismatch = false;
-                thatSegments = solnPlot.Segments;
-                thisSegments = studPlot.Segments;
-                for i = 1:numel(thatSegments)
-                    % for each in this, go until we have found it. Cannot
-                    % delete (for now) because not necessarily unique!!
-                    areEqual = false;
-                    for j = 1:numel(thisSegments)
-                        if isequal(thatSegments(i), thisSegments(j))
-                            areEqual = true;
+                for i = numel(solnSegs):-1:1
+                    seg = solnSegs(i);
+                    isFound = false;
+                    for j = numel(studSegs):-1:1
+                        if isequal(seg, studSegs(j))
+                            solnSegs(i) = [];
+                            studSegs(j) = [];
+                            isFound = true;
                             break;
                         end
                     end
-                    if ~areEqual
-                        % not found; not equal!
-                        data.student = [];
-                        data.solution = thatSegments(i);
+                    if ~isFound
                         segmentMismatch = true;
+                        solnSeg = seg;
                         break;
-                    else
-
                     end
                 end
+                if segmentMismatch
+                    segMsg = sprintf('Segment (%d, %d) -> (%d, %d) is missing!', ...
+                        solnSeg.Segment{1}(1), ...
+                        solnSeg.Segment{2}(1), ...
+                        solnSeg.Segment{1}(2), ...
+                        solnSeg.Segment{2}(2));
+                    studSeg = [];
+                elseif ~isempty(studSegs)
+                    studSeg = studSegs(1);
+                    solnSeg = [];
+                    segMsg = sprintf('Segment (%d, %d) -> (%d, %d) should not have been plotted!', ...
+                        studSeg.Segment{1}(1), ...
+                        studSeg.Segment{2}(1), ...
+                        studSeg.Segment{1}(2), ...
+                        studSeg.Segment{2}(2));
+                end
+                
                 pointMismatch = false;
-                thatPoints = solnPlot.Points;
-                thisPoints = studPlot.Points;
-                for i = 1:numel(thatPoints)
-                    % for each in this, go until we have found it. Cannot
-                    % delete (for now) because not necessarily unique!!
-                    areEqual = false;
-                    for j = 1:numel(thatPoints)
-                        if isequal(thatPoints(i), thisPoints(j))
-                            areEqual = true;
-                            break;
+                studPoints = studs(s).Points;
+                solnPoints = solnPlot.Points;
+                % search through
+                for i = numel(solnPoints):-1:1
+                    pt = solnPoints(i);
+                    for j = numel(studPoints):-1:1
+                        if isequal(pt, studPoints(j))
+                            solnPoints(i) = [];
+                            studPoints(j) = [];
+                            isFound = true;
                         end
                     end
-                    if ~areEqual
-                        % not found; not equal!
-                        data.student = [];
-                        data.solution = thatPoints(i);
+                    if ~isFound
                         pointMismatch = true;
+                        solnPoint = pt;
                         break;
-                    else
-
                     end
+                end
+                if pointMismatch
+                    ptMsg = sprintf('Point (%0.2f, %0.2f) is missing!', ...
+                        solnPoint.X, solnPoint.Y);
+                    studPoint = [];
+                elseif ~isempty(studPoints)
+                    studPoint = studPoints(1);
+                    solnPoint = [];
+                    ptMsg = sprintf('Point (%02.f, %0.2f) should not be plotted!', ...
+                        studPoint.X, studPoint.Y);
                 end
                 % get right message
                 % Priority for checking:
@@ -337,9 +352,13 @@ function [eq, msg, data] = checkPlots(fun, varargin)
                 if ~isequal(studPlot.Position, solnPlot.Position)
                     msg = 'Your plot is wrongly positioned (did you remember to call subplot?)';
                 elseif segmentMismatch
-                    msg = 'A line segment was not found';
+                    msg = segMsg;
+                    data.student = studSeg;
+                    data.solution = solnSeg;
                 elseif pointMismatch
-                    msg = 'A Point Segment was not found';
+                    msg = ptMsg;
+                    data.student = studPoint;
+                    data.solution = solnPoint;
                 elseif ~isequal(studPlot.PlotBox, solnPlot.PlotBox)
                     msg = ['Your axes (limits and/or scaling) aren''t correct ', ...
                         '(axes limits and scaling are affected by things ', ...
@@ -389,9 +408,9 @@ function [eq, msg, data] = checkPlots(fun, varargin)
                 % for each point, plot
                 for pt = 1:numel(studPlot.Points)
                     point = studPlot.Points(pt);
-                    x = point.XData;
-                    y = point.YData;
-                    z = point.ZData;
+                    x = point.X;
+                    y = point.Y;
+                    z = point.Z;
                     if isempty(z)
                         p = plot(ax, x, y, ...
                             [point.Marker point.LineStyle]);
@@ -436,9 +455,9 @@ function [eq, msg, data] = checkPlots(fun, varargin)
                 % for each point, plot
                 for pt = 1:numel(solnPlot.Points)
                     point = solnPlot.Points(pt);
-                    x = point.XData;
-                    y = point.YData;
-                    z = point.ZData;
+                    x = point.X;
+                    y = point.Y;
+                    z = point.Z;
                     if isempty(z)
                         p = plot(ax, x, y, ...
                             [point.Marker point.LineStyle]);

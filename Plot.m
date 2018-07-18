@@ -7,6 +7,10 @@
 %
 %%% Fields
 %
+% * Segments: A structure array of all the segments in the plot
+%
+% * Points: A structure array of all the points in the plot
+%
 % * Title: A String of the title used for the plot
 %
 % * XLabel: A String of the xLabel used for the plot
@@ -40,7 +44,6 @@
 % a subplot is considered a single plot. Like the File class, the Plot
 % class copies over any data necessary to recreate the plot entirely; as
 % such, the plot can be deleted once a Plot object is created!
-%
 %
 classdef Plot < handle
     properties (Access = public)
@@ -128,11 +131,11 @@ classdef Plot < handle
             this.YLabel = pHandle.YLabel.String;
             this.ZLabel = pHandle.ZLabel.String;
             this.Position = round(pHandle.Position, ...
-                this.ROUNDOFF_ERROR);
+                Plot.ROUNDOFF_ERROR);
             this.PlotBox = round(pHandle.PlotBoxAspectRatio, ...
-                this.ROUNDOFF_ERROR);
+                Plot.ROUNDOFF_ERROR);
             this.Limits = round([pHandle.XLim, pHandle.YLim, pHandle.ZLim], ...
-                this.ROUNDOFF_ERROR);
+                Plot.ROUNDOFF_ERROR);
             
             tmp = figure();
             par = pHandle.Parent;
@@ -269,11 +272,37 @@ classdef Plot < handle
                     counter = counter + length(tmp);
                 end
             end
+            % Find Uniqueness:
+            % for each one, iterate over others; each one, if equal,
+            % delete.
+            c = 1;
+            while c <= length(segments)
+                % iterate over rest of segments
+                seg = segments(c);
+                for j = (c+1):length(segments)
+                    if isequal(seg, segments(j))
+                        segments(j) = [];
+                        break;
+                    end
+                end
+                c = c + 1;
+            end
+            % Sorting this would make comparison faster - but would the
+            % sorting actually be slower than just comparing unsorted?
+            
+            % Sort order doesn't actually matter for equality; it can just
+            % make it faster. So our sort algorithm doesn't actually have
+            % to be fully unique, so just sorting by X values should be
+            % good enough, while still being quite spritely
+            
             this.Segments = struct('Segment', segments, ...
                 'Color', segmentColors, ...
                 'Marker', segmentMarkers, ...
                 'LineStyle', segmentStyles, ...
                 'Legend', segmentLegends);
+            segXPts = arrayfun(@(s)(s.Segment{1}(1)), this.Segments);
+            [~, inds] = sort(segXPts);
+            this.Segments = this.Segments(inds);
             function segments = line2segments(xx, yy, zz)
                 % a single line is guaranteed to be of the same color,
                 % style, etc. - that's why it's a line!
@@ -312,55 +341,73 @@ classdef Plot < handle
                 end
             end
             % for every line that has no line style, we should sort it.
-            ptData = cell(1, sum(strcmp(linestyle, '')));
-            points = struct('XData', ptData, ...
-                'YData', ptData, ...
-                'ZData', ptData, ...
-                'Marker', [], ...
-                'LineStyle', '', ...
-                'Legend', '', ...
-                'Color', []);
-            counter = 1;
-            for l = 1:numel(linestyle)
-                if isempty(linestyle{l})
-                    % sort. Doesn't matter by what, but be consistent
-                    pt = cell(1, 3);
-                    
-                    if ~isempty(xcell{l})
-                        pt(1) = {arrayfun(@num2str, xcell{l}, 'uni', false)'};
-                    end
-                    
-                    if ~isempty(ycell{l})
-                        pt(2) = {arrayfun(@num2str, ycell{l}, 'uni', false)'};
-                    end
-                    if ~isempty(zcell{l})
-                        pt(3) = {arrayfun(@num2str, zcell{l}, 'uni', false)'};
-                    end
-                    % pick out non empty
-                    pt(cellfun(@isempty, pt)) = [];
-                    % now join such that we have 1xN cell array of strings
-                    pt = join([pt{:}], ' ');
-                    [~, inds] = sort(pt);
-                    % now we have indices; apply
-                    if ~isempty(xcell{l})
-                        xcell{l} = xcell{l}(inds);
-                    end
-                    if ~isempty(ycell{l})
-                        ycell{l} = ycell{l}(inds);
-                    end
-                    if ~isempty(zcell{l})
-                        zcell{l} = zcell{l}(inds);
-                    end
-                    points(counter).XData = xcell{l};
-                    points(counter).YData = ycell{l};
-                    points(counter).ZData = zcell{l};
-                    points(counter).Marker = marker{l};
-                    points(counter).LineStyle = '';
-                    points(counter).Color = color{l};
-                    points(counter).Legend = legend{l};
-                    counter = counter + 1;
-                end
+            % every point should be documented; EACH point is it's own
+            % structure
+            % for each line that has no line style, get it
+            mask = strcmp(linestyle, '');
+            % get X, Y, Z, Marker, Legend, Color
+            ptXData = xcell(mask);
+            ptYData = ycell(mask);
+            if ~all(cellfun(@isempty, zcell))
+                ptZData = zcell(mask);
+            else
+                ptZData = cell(1, sum(mask));
             end
+            % z data?
+            ptMarker = marker(mask);
+            ptColor = color(mask);
+            ptLegend = legend(mask);
+            % get total amnt of points
+            totalPoints = 0;
+            for p = 1:numel(ptXData)
+                totalPoints = totalPoints + numel(xcell{p});
+            end
+            ptData = cell(1, totalPoints);
+            points = struct('X', ptData, ...
+                'Y', ptData, ...
+                'Z', ptData, ...
+                'Marker', ptData, ...
+                'LineStyle', '', ...
+                'Legend', ptData, ...
+                'Color', ptData);
+            counter = 1;
+            for i = 1:length(ptXData)
+                % just separate X, Y, Z points
+                xx = num2cell(ptXData{i});
+                yy = num2cell(ptYData{i});
+                zz = ptZData{i};
+                mark = ptMarker{i};
+                col = ptColor{i};
+                leg = ptLegend{i};
+                if isempty(zz)
+                    zz = {[]};
+                else
+                    zz = num2cell(zz);
+                end
+                [points(counter:(counter+length(xx)-1)).X] = deal(xx{:});
+                [points(counter:(counter+length(xx)-1)).Y] = deal(yy{:});
+                [points(counter:(counter+length(xx)-1)).Z] = deal(zz{:});
+                [points(counter:(counter+length(xx)-1)).Marker] = deal(mark);
+                [points(counter:(counter+length(xx)-1)).Color] = deal(col);
+                [points(counter:(counter+length(xx)-1)).Legend] = deal(leg);
+                counter = counter + length(xx);
+            end
+            % Unique check
+            % for all pts, if any point is identical, kill it
+            while p <= length(points)
+                pt = points(p);
+                for j = (p+1):length(points)
+                    if isequal(pt, points(j))
+                        points(j) = [];
+                    end
+                end
+                p = p + 1;
+            end
+            
+            % Sort, just like we did with Segments:
+            [~, inds] = sort([points.X]);
+            points = points(inds);
+                    
             
             this.Points = points;
         end
@@ -458,6 +505,32 @@ classdef Plot < handle
             % for each point set, see if found in this
             thatPoints = that.Points;
             thisPoints = this.Points;
+            
+            for i = numel(thatPoints):-1:1
+                thatPoint = thatPoints(i);
+                % look through thisSegs; once found, delete from both
+                isFound = false;
+                for j = numel(thisPoints):-1:1
+                    if isequal(thatPoint, thisPoints(j))
+                        isFound = true;
+                        thisPoints(j) = [];
+                        thatPoints(i) = [];
+                        break;
+                    end
+                end
+                if ~isFound
+                    areEqual = false;
+                    return;
+                end
+            end
+            if ~isempty(thisPoints) || ~isempty(thatPoints)
+                areEqual = false;
+                return;
+            end
+            % Nothing should be left in either set; if both sets are
+            % non-empty, then false
+            thatPoints = that.Points;
+            thisPoints = this.Points;
             for i = 1:numel(thatPoints)
                 isFound = false;
                 for j = 1:numel(thisPoints)
@@ -471,59 +544,38 @@ classdef Plot < handle
                     return;
                 end 
             end
-            % Check other way; so wayward points are still killed
-            for i = 1:numel(thisPoints)
-                isFound = false;
-                for j = 1:numel(thatPoints)
-                    if isequal(thisPoints(i), thatPoints(j))
-                        isFound = true;
-                        break;
-                    end
-                end
-                if ~isFound
-                    areEqual = false;
-                    return;
-                end
-            end
 
             % Roll Call
             % for each line segment in that, see if found in this
-            thatSegments = that.Segments;
-            thisSegments = this.Segments;
-            for i = 1:numel(thatSegments)
-                % for each in this, go until we have found it. Cannot
-                % delete (for now) because not necessarily unique!!
+            % Since they are unique, remove from both sets when found.
+            % Then, at end, if both are empty, equal; otherwise, unequal.
+            thatSegs = that.Segments;
+            thisSegs = this.Segments;
+            
+            for i = numel(thatSegs):-1:1
+                thatSeg = thatSegs(i);
+                % look through thisSegs; once found, delete from both
                 isFound = false;
-                for j = 1:numel(thisSegments)
-                    if isequal(thatSegments(i), thisSegments(j))
+                for j = numel(thisSegs):-1:1
+                    if isequal(thatSeg, thisSegs(j))
                         isFound = true;
+                        thisSegs(j) = [];
+                        thatSegs(i) = [];
                         break;
                     end
                 end
                 if ~isFound
-                    % not found; not equal!
                     areEqual = false;
                     return;
                 end
             end
-            % for each line segment in this, see if found in that
-            for i = 1:numel(thisSegments)
-                % for each in this, go until we have found it. Cannot
-                % delete (for now) because not necessarily unique!!
-                isFound = false;
-                for j = 1:numel(thatSegments)
-                    if isequal(thisSegments(i), thatSegments(j))
-                        isFound = true;
-                        break;
-                    end
-                end
-                if ~isFound
-                    % not found; not equal!
-                    areEqual = false;
-                    return;
-                end
+            % Nothing should be left in either set; if both sets are
+            % non-empty, then false
+            if ~isempty(thisSegs) || ~isempty(thatSegs)
+                areEqual = false;
+            else
+                areEqual = true;
             end
-            areEqual = true;
         end
         function [html] = generateFeedback(this, that)
         %% generateFeedback: Generates HTML feedback for the student and solution Plot.
