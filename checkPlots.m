@@ -299,6 +299,7 @@ function [eq, msg, data] = checkPlots(fun, varargin)
                         solnSeg.Segment{2}(2));
                     studSeg = [];
                 elseif ~isempty(studSegs)
+                    segmentMismatch = true;
                     studSeg = studSegs(1);
                     solnSeg = [];
                     segMsg = sprintf('Segment (%d, %d) -> (%d, %d) should not have been plotted!', ...
@@ -332,6 +333,7 @@ function [eq, msg, data] = checkPlots(fun, varargin)
                         solnPoint.X, solnPoint.Y);
                     studPoint = [];
                 elseif ~isempty(studPoints)
+                    pointMismatch = true;
                     studPoint = studPoints(1);
                     solnPoint = [];
                     ptMsg = sprintf('Point (%02.f, %0.2f) should not be plotted!', ...
@@ -380,7 +382,7 @@ function [eq, msg, data] = checkPlots(fun, varargin)
                     msg = 'Your z label is incorrect';
                     data.student = studPlot.ZLabel;
                     data.solution = solnPlot.ZLabel;
-                elseif studPlot.IsAlien
+                elseif studPlot.isAlien
                     msg = ['Your plots are nearly identical; however, you''ve ', ...
                         'Plotted something that isn''t a line and/or point. (', ...
                         'functions like bar(), pie(), imshow(), and area() ', ...
@@ -390,9 +392,9 @@ function [eq, msg, data] = checkPlots(fun, varargin)
                 else
                     % we can't find anything wrong; tell them to talk to a
                     % TA!
-                    msg = ['We can''t seem to find anything wrong with your', ...
+                    msg = ['We can''t seem to find anything wrong with your ', ...
                         'plot, but we know they''re not equal. Please go ', ...
-                        'to a TA at helpdesk OR email your TA with your code'];
+                        'to a TA at helpdesk OR email your TA'];
                 end
                 % show the two plots
                 f = figure('Name', 'Student''s Plot', 'NumberTitle', 'off');
