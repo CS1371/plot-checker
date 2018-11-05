@@ -59,6 +59,7 @@ function [eq, msg, data] = checkPlots(fun, varargin)
     
     % run solution function
     try
+        figure('Visible','off')
         soln(varargin{:});
     catch e
         warning(e.message);
@@ -72,6 +73,7 @@ function [eq, msg, data] = checkPlots(fun, varargin)
     close('all', 'force');
     % run student function and collect PLOT
     try
+        figure('Visible','off')
         fun(varargin{:});
     catch e
         warning(e.message);
@@ -503,8 +505,10 @@ function plots = populatePlots()
     % for the subplot checking
     pHandles = findobj(0, 'type', 'axes');
     if numel(pHandles) ~= 0
+        figure('Visible','off')
         plots(numel(pHandles)) = Plot(pHandles(end));
         for i = 1:(numel(pHandles) - 1)
+            figure('Visible','off')
             plots(i) = Plot(pHandles(i));
         end
     else

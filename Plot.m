@@ -137,7 +137,7 @@ classdef Plot < handle
             this.Limits = round([pHandle.XLim, pHandle.YLim, pHandle.ZLim], ...
                 Plot.ROUNDOFF_ERROR);
             
-            tmp = figure();
+            tmp = figure('Visible','off');
             par = pHandle.Parent;
             pHandle.Parent = tmp;
             imgstruct = getframe(tmp);
