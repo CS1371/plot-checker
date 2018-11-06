@@ -6,6 +6,6 @@ plots were the same (or not). Critically, this checker is to be run _by the stud
 ## Requirements
 
 - **If it passes the checker, it must pass the autograder**
-- **If it passes the autograder, it _should_ not pass the checker**
+- **If it passes the autograder, it _should_ pass the checker**
 
 In other words, the checker must be as or more stringent as the autograder.
