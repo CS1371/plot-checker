@@ -118,7 +118,6 @@ BAD_FONT_FACTOR = 3;
                     studs(s) = [];
                     isFound = true;
                     eq = true;
-                    msg = '';
                     data.student = [];
                     data.solution = [];
                 end
