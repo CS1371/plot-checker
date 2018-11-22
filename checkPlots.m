@@ -29,10 +29,6 @@
 % warnings.
 %
 function [eq, msg, data] = checkPlots(fun, varargin)
-ERROR_COLOR = [.85 0 0];
-BAD_MARKER_SIZE = 12;
-BAD_LINE_WIDTH = 10;
-BAD_FONT_FACTOR = 3;
 %#ok<*LAXES>
     % try to convert to function handle
     if ischar(fun)
@@ -139,6 +135,7 @@ BAD_FONT_FACTOR = 3;
                 % * If no, then look at position (subplot)
                 %
                 % * If all else fails, pick one at random
+                
                 isFound = false;
                 for s = numel(studs):-1:1
                     studPlot = studs(s);
@@ -189,195 +186,8 @@ BAD_FONT_FACTOR = 3;
                     warning('We couldn''t find a good match for this plot, so take any feedback with a grain of salt');
                 end
                 eq = false;
-                %
-                % Feedback is given as bolding and/or changing colors. The
-                % following should be considered:
-                %   * Title
-                %   * Labels
-                %   * Line Colors
-                %   * Point Colors
-                %   * Point Markers
-                %   * Line Styles
-                %   * Points that exist in one, but not other
-                %   * Segments that exist in one, but not other
-                %
-                % Do the following:
-                %
-                %   1. If the title is messed up, color with ERROR_COLOR;
-                %   2. If the labels are messed up, color with ERROR_COLOR;
-                %   3. If a line is otherwise equal except for style or
-                %   color, expand line width to BAD_SEGMENT_WIDTH
-                %   4. If a point is otherwise equal except for marker or
-                %   color, expand marker size to BAD_MARKER_SIZE
-                %   5. If a point exists in only one, plot with
-                %   BAD_MARKER_SIZE.
-                %   6. If a segment exists in only one, plot with
-                %   BAD_LINE_WIDTH.
-                %   7. If the position is wrong, add text in middle of axes
-                %   8. If the axis style is wrong, add text in middle of axes
-                %   9. If the axis limits are wrong, color the Axis itself
-                %   10. If alien, add text in middle of axes
-                % 
-                % Start by creating two plots.
-                %%% Title
-                solutionAxes = axes(solutionFigure, ...
-                    'Position', solnPlot.Position, ...
-                    'XLim', solnPlot.Limits(1:2), ...
-                    'YLim', solnPlot.Limits(3:4), ...
-                    'ZLim', solnPlot.Limits(5:6), ...
-                    'PlotBoxAspectRatio', solnPlot.PlotBox);
-                solutionAxes.XLabel.String = solnPlot.XLabel;
-                solutionAxes.YLabel.String = solnPlot.YLabel;
-                solutionAxes.ZLabel.String = solnPlot.ZLabel;
-                solutionAxes.Title.String = sprintf('[%d] %s', n, solnPlot.Title);
-                hold(solutionAxes, 'on');
-                studentAxes = axes(studentFigure, ...
-                    'Position', solnPlot.Position, ...
-                    'XLim', studPlot.Limits(1:2), ...
-                    'YLim', studPlot.Limits(3:4), ...
-                    'ZLim', studPlot.Limits(5:6), ...
-                    'PlotBoxAspectRatio', studPlot.PlotBox);
-                studentAxes.XLabel.String = studPlot.XLabel;
-                studentAxes.YLabel.String = studPlot.YLabel;
-                studentAxes.ZLabel.String = studPlot.ZLabel;
-                studentAxes.Title.String = studPlot.Title;
-                hold(studentAxes, 'on');
-                if ~studPlot.dataEquals(solnPlot)
-                    msg{n}{end+1} = sprintf('Plot %d: Incorrect Data', n);
-                end
-                %%% Title
-                if ~isequal(studPlot.Title, solnPlot.Title)
-                    studentAxes.Title.Color = ERROR_COLOR;
-                    studentAxes.TitleFontSizeMultiplier = BAD_FONT_FACTOR;
-                    % solutionAxes.TitleFontSizeMultiplier = BAD_FONT_FACTOR;
-                    msg{n}{end+1} = sprintf('Plot %d: Incorrect Title', n);
-                end
-                if ~isequal(studPlot.XLabel, solnPlot.XLabel)
-                    studentAxes.XLabel.Color = ERROR_COLOR;
-                    studentAxes.XLabel.FontSize = ...
-                        studentAxes.XLabel.FontSize * BAD_FONT_FACTOR;
-                    % solutionAxes.XLabel.FontSize = ...
-                    %     solutionAxes.XLabel.FontSize * BAD_FONT_FACTOR;
-                    msg{n}{end+1} = sprintf('Plot %d: Incorrect XLabel', n);
-                end
-                if ~isequal(studPlot.YLabel, solnPlot.YLabel)
-                    studentAxes.YLabel.Color = ERROR_COLOR;
-                    studentAxes.YLabel.FontSize = ...
-                        studentAxes.YLabel.FontSize * BAD_FONT_FACTOR;
-                    % solutionAxes.YLabel.FontSize = ...
-                    %     solutionAxes.YLabel.FontSize * BAD_FONT_FACTOR;
-                    msg{n}{end+1} = sprintf('Plot %d: Incorrect YLabel', n);
-                end
-                if ~isequal(studPlot.ZLabel, solnPlot.ZLabel)
-                    studentAxes.ZLabel.Color = ERROR_COLOR;
-                    studentAxes.ZLabel.FontSize = ...
-                        studentAxes.Label.FontSize * BAD_FONT_FACTOR;
-                    % solutionAxes.ZLabel.FontSize = ...
-                    %     solutionAxes.Label.FontSize * BAD_FONT_FACTOR;
-                    msg{n}{end+1} = sprintf('Plot %d: Incorrect ZLabel', n);
-                end
-                % It differs. First we'll plot everything on SOLUTION
-                % that isn't found in STUDENTS
-                segs = solnPlot.Segments;
-                segs = segs(~ismember(segs, studPlot.Segments));
-                for s = numel(segs):-1:1
-                    seg = segs(s);
-                    pts = [seg.Start seg.Stop];
-                    if any([pts.Z] ~= 0)
-                        solnLine = plot3(solutionAxes, [pts.X], [pts.Y], [pts.Z]);
-                    else
-                        solnLine = plot(solutionAxes, [pts.X], [pts.Y]);
-                    end
-                    solnLine.Color = seg.Color;
-                    solnLine.LineStyle = seg.Style;
-                    solnLine.LineWidth = BAD_LINE_WIDTH;
-                end
+                msg{n} = createView(solnPlot, studPlot, solutionFigure, studentFigure, n);
                 
-                segs = studPlot.Segments;
-                segs = segs(~ismember(segs, solnPlot.Segments));
-                for s = numel(segs):-1:1
-                    seg = segs(s);
-                    pts = [seg.Start seg.Stop];
-                    if any([pts.Z] ~= 0)
-                        studLine = plot3(studentAxes, [pts.X], [pts.Y], [pts.Z]);
-                    else
-                        studLine = plot(studentAxes, [pts.X], [pts.Y]);
-                    end
-                    studLine.Color = seg.Color;
-                    studLine.LineStyle = seg.Style;
-                    studLine.LineWidth = BAD_LINE_WIDTH;
-                end
-                
-                pts = solnPlot.Points;
-                pts = pts(~ismember(pts, studPlot.Points));
-                for p = numel(pts):-1:1
-                    pt = pts(p);
-                    if pt.Z ~= 0
-                        solnPt = plot3(solutionAxes, pt.X, pt.Y, pt.Z);
-                    else
-                        solnPt = plot(solutionAxes, pt.X, pt.Y);
-                    end
-                    solnPt.Marker = pt.Marker;
-                    solnPt.Color = pt.Color;
-                    solnPt.MarkerSize = BAD_MARKER_SIZE;
-                end
-                
-                pts = studPlot.Points;
-                pts = pts(~ismember(pts, solnPlot.Points));
-                for p = numel(pts):-1:1
-                    pt = pts(p);
-                    if pt.Z ~= 0
-                        studPt = plot3(studentAxes, pt.X, pt.Y, pt.Z);
-                    else
-                        studPt = plot(studentAxes, pt.X, pt.Y);
-                    end
-                    studPt.Marker = pt.Marker;
-                    studPt.Color = pt.Color;
-                    studPt.MarkerSize = BAD_MARKER_SIZE;
-                end
-                
-                if ~isequal(studPlot.Limits(1:2), solnPlot.Limits(1:2))
-                    studentAxes.XColor = ERROR_COLOR;
-                    msg{n}{end+1} = sprintf('Plot %d: Incorrect XLimits', n);
-                end
-                if ~isequal(studPlot.Limits(3:4), solnPlot.Limits(3:4))
-                    studentAxes.YColor = ERROR_COLOR;
-                    msg{n}{end+1} = sprintf('Plot %d: Incorrect YLimits', n);
-                end
-                if ~isequal(studPlot.Limits(5:6), solnPlot.Limits(5:6))
-                    studentAxes.ZColor = ERROR_COLOR;
-                    msg{n}{end+1} = sprintf('Plot %d: Incorrect ZLimits', n);
-                end
-                txtHelper = cell(3, 1);
-                if any(solnPlot.Position < (studPlot.Position - Plot.POSITION_MARGIN)) ...
-                    || any(solnPlot.Position > (studPlot.Position + Plot.POSITION_MARGIN))
-                    txtHelper{1} = ...
-                        'Subplot Incorrect';
-                    msg{n}{end+1} = sprintf('Plot %d: Incorrect Position (did you remember to call subplot?)', n);
-                end
-                if any(solnPlot.PlotBox < (studPlot.PlotBox - Plot.POSITION_MARGIN)) ...
-                    || any(solnPlot.PlotBox > (studPlot.PlotBox + Plot.POSITION_MARGIN))
-                    txtHelper{2} = ...
-                        'Axis Incorrect';
-                    msg{n}{end+1} = sprintf('Plot %d: Incorrect Aspect Ratio (did you forget to call axis square, or axis equal?)', n);
-                end
-                if studPlot.isAlien
-                    txtHelper{3} = 'Invalid Data';
-                    msg{n}{end+1} = sprintf('Plot %d: You have invalid data - make sure you stick to plot and plot3 for plotting data!', n);
-                end
-                txtHelper(cellfun(@isempty, txtHelper)) = [];
-                if ~isempty(txtHelper)
-                    txtHelper = text(mean(studPlot.Limits(1:2)), ...
-                        mean(studPlot.Limits(3:4)), ...
-                        txtHelper);
-                    txtHelper.HorizontalAlignment = 'center';
-                    txtHelper.VerticalAlignment = 'middle';
-                    txtHelper.Color = ERROR_COLOR;
-                    txtHelper.BackgroundColor = [1 1 1];
-                    txtHelper.FontUnits = 'normalized';
-                    drawnow;
-                    txtHelper.FontSize = 2 * txtHelper.FontSize;
-                end
             end
         end
         msg = [msg{:}];
@@ -405,5 +215,199 @@ function plots = populatePlots()
         plots = [];
     end
 end
-    
-    
+
+function message = createView(solnPlot, studPlot, solutionFigure, studentFigure, n)
+ERROR_COLOR = [.85 0 0];
+BAD_MARKER_SIZE = 12;
+BAD_LINE_WIDTH = 10;
+BAD_FONT_FACTOR = 3;
+    % Feedback is given as bolding and/or changing colors. The
+    % following should be considered:
+    %   * Title
+    %   * Labels
+    %   * Line Colors
+    %   * Point Colors
+    %   * Point Markers
+    %   * Line Styles
+    %   * Points that exist in one, but not other
+    %   * Segments that exist in one, but not other
+    %
+    % Do the following:
+    %
+    %   1. If the title is messed up, color with ERROR_COLOR;
+    %   2. If the labels are messed up, color with ERROR_COLOR;
+    %   3. If a line is otherwise equal except for style or
+    %   color, expand line width to BAD_SEGMENT_WIDTH
+    %   4. If a point is otherwise equal except for marker or
+    %   color, expand marker size to BAD_MARKER_SIZE
+    %   5. If a point exists in only one, plot with
+    %   BAD_MARKER_SIZE.
+    %   6. If a segment exists in only one, plot with
+    %   BAD_LINE_WIDTH.
+    %   7. If the position is wrong, add text in middle of axes
+    %   8. If the axis style is wrong, add text in middle of axes
+    %   9. If the axis limits are wrong, color the Axis itself
+    %   10. If alien, add text in middle of axes
+    % 
+    % Start by creating two plots.
+    %%% Title
+    message = cell(0);
+    solutionAxes = axes(solutionFigure, ...
+        'Position', solnPlot.Position, ...
+        'XLim', solnPlot.Limits(1:2), ...
+        'YLim', solnPlot.Limits(3:4), ...
+        'ZLim', solnPlot.Limits(5:6), ...
+        'PlotBoxAspectRatio', solnPlot.PlotBox);
+    solutionAxes.XLabel.String = solnPlot.XLabel;
+    solutionAxes.YLabel.String = solnPlot.YLabel;
+    solutionAxes.ZLabel.String = solnPlot.ZLabel;
+    solutionAxes.Title.String = sprintf('[%d] %s', n, solnPlot.Title);
+    hold(solutionAxes, 'on');
+    studentAxes = axes(studentFigure, ...
+        'Position', solnPlot.Position, ...
+        'XLim', studPlot.Limits(1:2), ...
+        'YLim', studPlot.Limits(3:4), ...
+        'ZLim', studPlot.Limits(5:6), ...
+        'PlotBoxAspectRatio', studPlot.PlotBox);
+    studentAxes.XLabel.String = studPlot.XLabel;
+    studentAxes.YLabel.String = studPlot.YLabel;
+    studentAxes.ZLabel.String = studPlot.ZLabel;
+    studentAxes.Title.String = studPlot.Title;
+    hold(studentAxes, 'on');
+    if ~studPlot.dataEquals(solnPlot)
+        message{end+1} = sprintf('Plot %d: Incorrect Data', n);
+    end
+    %%% Title
+    if ~isequal(studPlot.Title, solnPlot.Title)
+        studentAxes.Title.Color = ERROR_COLOR;
+        studentAxes.TitleFontSizeMultiplier = BAD_FONT_FACTOR;
+        % solutionAxes.TitleFontSizeMultiplier = BAD_FONT_FACTOR;
+        message{end+1} = sprintf('Plot %d: Incorrect Title', n);
+    end
+    if ~isequal(studPlot.XLabel, solnPlot.XLabel)
+        studentAxes.XLabel.Color = ERROR_COLOR;
+        studentAxes.XLabel.FontSize = ...
+            studentAxes.XLabel.FontSize * BAD_FONT_FACTOR;
+        % solutionAxes.XLabel.FontSize = ...
+        %     solutionAxes.XLabel.FontSize * BAD_FONT_FACTOR;
+        message{end+1} = sprintf('Plot %d: Incorrect XLabel', n);
+    end
+    if ~isequal(studPlot.YLabel, solnPlot.YLabel)
+        studentAxes.YLabel.Color = ERROR_COLOR;
+        studentAxes.YLabel.FontSize = ...
+            studentAxes.YLabel.FontSize * BAD_FONT_FACTOR;
+        % solutionAxes.YLabel.FontSize = ...
+        %     solutionAxes.YLabel.FontSize * BAD_FONT_FACTOR;
+        message{end+1} = sprintf('Plot %d: Incorrect YLabel', n);
+    end
+    if ~isequal(studPlot.ZLabel, solnPlot.ZLabel)
+        studentAxes.ZLabel.Color = ERROR_COLOR;
+        studentAxes.ZLabel.FontSize = ...
+            studentAxes.Label.FontSize * BAD_FONT_FACTOR;
+        % solutionAxes.ZLabel.FontSize = ...
+        %     solutionAxes.Label.FontSize * BAD_FONT_FACTOR;
+        message{end+1} = sprintf('Plot %d: Incorrect ZLabel', n);
+    end
+    % It differs. First we'll plot everything on SOLUTION
+    % that isn't found in STUDENTS
+    segs = solnPlot.Segments;
+    segs = segs(~ismember(segs, studPlot.Segments));
+    for s = numel(segs):-1:1
+        seg = segs(s);
+        pts = [seg.Start seg.Stop];
+        if any([pts.Z] ~= 0)
+            solnLine = plot3(solutionAxes, [pts.X], [pts.Y], [pts.Z]);
+        else
+            solnLine = plot(solutionAxes, [pts.X], [pts.Y]);
+        end
+        solnLine.Color = seg.Color;
+        solnLine.LineStyle = seg.Style;
+        solnLine.LineWidth = BAD_LINE_WIDTH;
+    end
+
+    segs = studPlot.Segments;
+    segs = segs(~ismember(segs, solnPlot.Segments));
+    for s = numel(segs):-1:1
+        seg = segs(s);
+        pts = [seg.Start seg.Stop];
+        if any([pts.Z] ~= 0)
+            studLine = plot3(studentAxes, [pts.X], [pts.Y], [pts.Z]);
+        else
+            studLine = plot(studentAxes, [pts.X], [pts.Y]);
+        end
+        studLine.Color = seg.Color;
+        studLine.LineStyle = seg.Style;
+        studLine.LineWidth = BAD_LINE_WIDTH;
+    end
+
+    pts = solnPlot.Points;
+    pts = pts(~ismember(pts, studPlot.Points));
+    for p = numel(pts):-1:1
+        pt = pts(p);
+        if pt.Z ~= 0
+            solnPt = plot3(solutionAxes, pt.X, pt.Y, pt.Z);
+        else
+            solnPt = plot(solutionAxes, pt.X, pt.Y);
+        end
+        solnPt.Marker = pt.Marker;
+        solnPt.Color = pt.Color;
+        solnPt.MarkerSize = BAD_MARKER_SIZE;
+    end
+
+    pts = studPlot.Points;
+    pts = pts(~ismember(pts, solnPlot.Points));
+    for p = numel(pts):-1:1
+        pt = pts(p);
+        if pt.Z ~= 0
+            studPt = plot3(studentAxes, pt.X, pt.Y, pt.Z);
+        else
+            studPt = plot(studentAxes, pt.X, pt.Y);
+        end
+        studPt.Marker = pt.Marker;
+        studPt.Color = pt.Color;
+        studPt.MarkerSize = BAD_MARKER_SIZE;
+    end
+
+    if ~isequal(studPlot.Limits(1:2), solnPlot.Limits(1:2))
+        studentAxes.XColor = ERROR_COLOR;
+        message{end+1} = sprintf('Plot %d: Incorrect XLimits', n);
+    end
+    if ~isequal(studPlot.Limits(3:4), solnPlot.Limits(3:4))
+        studentAxes.YColor = ERROR_COLOR;
+        message{end+1} = sprintf('Plot %d: Incorrect YLimits', n);
+    end
+    if ~isequal(studPlot.Limits(5:6), solnPlot.Limits(5:6))
+        studentAxes.ZColor = ERROR_COLOR;
+        message{end+1} = sprintf('Plot %d: Incorrect ZLimits', n);
+    end
+    txtHelper = cell(3, 1);
+    if any(solnPlot.Position < (studPlot.Position - Plot.POSITION_MARGIN)) ...
+        || any(solnPlot.Position > (studPlot.Position + Plot.POSITION_MARGIN))
+        txtHelper{1} = ...
+            'Subplot Incorrect';
+        message{end+1} = sprintf('Plot %d: Incorrect Position (did you remember to call subplot?)', n);
+    end
+    if any(solnPlot.PlotBox < (studPlot.PlotBox - Plot.POSITION_MARGIN)) ...
+        || any(solnPlot.PlotBox > (studPlot.PlotBox + Plot.POSITION_MARGIN))
+        txtHelper{2} = ...
+            'Axis Incorrect';
+        message{end+1} = sprintf('Plot %d: Incorrect Aspect Ratio (did you forget to call axis square, or axis equal?)', n);
+    end
+    if studPlot.isAlien
+        txtHelper{3} = 'Invalid Data';
+        message{end+1} = sprintf('Plot %d: You have invalid data - make sure you stick to plot and plot3 for plotting data!', n);
+    end
+    txtHelper(cellfun(@isempty, txtHelper)) = [];
+    if ~isempty(txtHelper)
+        txtHelper = text(mean(studPlot.Limits(1:2)), ...
+            mean(studPlot.Limits(3:4)), ...
+            txtHelper);
+        txtHelper.HorizontalAlignment = 'center';
+        txtHelper.VerticalAlignment = 'middle';
+        txtHelper.Color = ERROR_COLOR;
+        txtHelper.BackgroundColor = [1 1 1];
+        txtHelper.FontUnits = 'normalized';
+        drawnow;
+        txtHelper.FontSize = 2 * txtHelper.FontSize;
+    end
+end 
