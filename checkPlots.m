@@ -29,9 +29,9 @@
 % warnings.
 %
 function [eq, msg, data] = checkPlots(fun, varargin)
-ERROR_COLOR = [.45 0 0];
+ERROR_COLOR = [.85 0 0];
 BAD_MARKER_SIZE = 12;
-BAD_LINE_WIDTH = 2;
+BAD_LINE_WIDTH = 10;
 BAD_FONT_FACTOR = 3;
 %#ok<*LAXES>
     % try to convert to function handle
@@ -120,6 +120,7 @@ BAD_FONT_FACTOR = 3;
                     eq = true;
                     data.student = [];
                     data.solution = [];
+                    break;
                 end
             end
             if ~isFound
@@ -248,72 +249,34 @@ BAD_FONT_FACTOR = 3;
                 if ~isequal(studPlot.Title, solnPlot.Title)
                     studentAxes.Title.Color = ERROR_COLOR;
                     studentAxes.TitleFontSizeMultiplier = BAD_FONT_FACTOR;
-                    solutionAxes.TitleFontSizeMultiplier = BAD_FONT_FACTOR;
+                    % solutionAxes.TitleFontSizeMultiplier = BAD_FONT_FACTOR;
                     msg{n}{end+1} = sprintf('Plot %d: Incorrect Title', n);
                 end
                 if ~isequal(studPlot.XLabel, solnPlot.XLabel)
                     studentAxes.XLabel.Color = ERROR_COLOR;
                     studentAxes.XLabel.FontSize = ...
                         studentAxes.XLabel.FontSize * BAD_FONT_FACTOR;
-                    solutionAxes.XLabel.FontSize = ...
-                        solutionAxes.XLabel.FontSize * BAD_FONT_FACTOR;
+                    % solutionAxes.XLabel.FontSize = ...
+                    %     solutionAxes.XLabel.FontSize * BAD_FONT_FACTOR;
                     msg{n}{end+1} = sprintf('Plot %d: Incorrect XLabel', n);
                 end
                 if ~isequal(studPlot.YLabel, solnPlot.YLabel)
                     studentAxes.YLabel.Color = ERROR_COLOR;
                     studentAxes.YLabel.FontSize = ...
                         studentAxes.YLabel.FontSize * BAD_FONT_FACTOR;
-                    solutionAxes.YLabel.FontSize = ...
-                        solutionAxes.YLabel.FontSize * BAD_FONT_FACTOR;
+                    % solutionAxes.YLabel.FontSize = ...
+                    %     solutionAxes.YLabel.FontSize * BAD_FONT_FACTOR;
                     msg{n}{end+1} = sprintf('Plot %d: Incorrect YLabel', n);
                 end
                 if ~isequal(studPlot.ZLabel, solnPlot.ZLabel)
                     studentAxes.ZLabel.Color = ERROR_COLOR;
                     studentAxes.ZLabel.FontSize = ...
                         studentAxes.Label.FontSize * BAD_FONT_FACTOR;
-                    solutionAxes.ZLabel.FontSize = ...
-                        solutionAxes.Label.FontSize * BAD_FONT_FACTOR;
+                    % solutionAxes.ZLabel.FontSize = ...
+                    %     solutionAxes.Label.FontSize * BAD_FONT_FACTOR;
                     msg{n}{end+1} = sprintf('Plot %d: Incorrect ZLabel', n);
                 end
-                
-                % We can first plot lines on both that are same. Use
-                % ismember to determine!
-                segs = solnPlot.Segments;
-                segs = segs(ismember(segs, studPlot.Segments));
-                for s = numel(segs):-1:1
-                    seg = segs(s);
-                    pts = [seg.Start seg.Stop];
-                    if any([pts.Z] ~= 0)
-                        solnLine = plot3(solutionAxes, [pts.X], [pts.Y], [pts.Z]);
-                        studLine = plot3(studentAxes, [pts.X], [pts.Y], [pts.Z]);
-                    else
-                        solnLine = plot(solutionAxes, [pts.X], [pts.Y]);
-                        studLine = plot3(studentAxes, [pts.X], [pts.Y]);
-                    end
-                    solnLine.Color = seg.Color;
-                    studLine.Color = seg.Color;
-                    solnLine.LineStyle = seg.Style;
-                    studLine.LineStyle = seg.Style;
-                end
-                
-                pts = solnPlot.Points;
-                pts = pts(ismember(pts, studPlot.Points));
-                for p = numel(pts):-1:1
-                    pt = pts(p);
-                    if pt.Z ~= 0
-                        solnPt = plot3(solutionAxes, pt.X, pt.Y, pt.Z);
-                        studPt = plot3(studentAxes, pt.X, pt.Y, pt.Z);
-                    else
-                        solnPt = plot(solutionAxes, pt.X, pt.Y);
-                        studPt = plot(studentAxes, pt.X, pt.Y);
-                    end
-                    solnPt.Marker = pt.Marker;
-                    studPt.Marker = pt.Marker;
-                    solnPt.Color = pt.Color;
-                    studPt.Color = pt.Color;
-                end
-                
-                % now, it differs. First we'll plot everything on SOLUTION
+                % It differs. First we'll plot everything on SOLUTION
                 % that isn't found in STUDENTS
                 segs = solnPlot.Segments;
                 segs = segs(~ismember(segs, studPlot.Segments));
