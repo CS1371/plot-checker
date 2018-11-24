@@ -105,14 +105,104 @@ BAD_FONT_FACTOR = 3;
             'NumberTitle', 'off', ...
             'Name', 'Student Plot(s)');
         msg = cell(1, numel(solns));
-       % same number of plots; now loop through
+        % same number of plots; now loop through layers
+        
+        i = numel(solns);
+        % First, find any plots that are exactly equal:
+        for n = numel(solns):-1:1
+            solnPlot = solns(n);
+            for s = numel(studs):-1:1
+                studPlot = studs(s);
+                if solnPlot.equals(studPlot)
+                   solnsOrdered(i) = solns(n);
+                   studsOrdered(i) = studs(s);
+                   solns(n) = [];
+                   studs(s) = [];
+                   i = i - 1;
+                end
+            end
+            
+        end
+        
+        % Layer 2: for any unmatched plots, find where the data is equal,
+        % ignoring other elements
+        for n = numel(solns):-1:1
+            solnPlot = solns(n);
+            for s = numel(studs):-1:1
+                studPlot = studs(s);
+                if solnPlot.dataEquals(studPlot)
+                   solnsOrdered(i) = solns(n);
+                   studsOrdered(i) = studs(s);
+                   solns(n) = [];
+                   studs(s) = [];
+                   i = i - 1;
+                end
+            end 
+        end
+        
+         % Layer 3: for any unmatched plots, find where the points are
+         % equal, ignoring other elements
+        for n = numel(solns):-1:1
+            solnPlot = solns(n);
+            for s = numel(studs):-1:1
+                studPlot = studs(s);
+                if solnPlot.pointEquals(studPlot)
+                   solnsOrdered(i) = solns(n);
+                   studsOrdered(i) = studs(s);
+                   solns(n) = [];
+                   studs(s) = [];
+                   i = i - 1;
+                end
+            end 
+        end
+     
+          
+        % Layer 4: or any unmatched plots, find where the data is close,
+        % still ignoring other elements
+        for n = numel(solns):-1:1
+          solnPlot = solns(n);
+            for s = numel(studs):-1:1
+                studPlot = studs(s);
+                
+                pMatch = 0;
+                for p = solnPlot.Points
+                    if ismember(p,studPlot.Points)
+                        pMatch = pMatch + 1;
+                    end
+                end
+                if pMatch > (numel(solnPlot.Points) - 0.1 * numel(solnPlot.Points))
+                   solnsOrdered(i) = solns(n);
+                   studsOrdered(i) = studs(s);
+                   solns(n) = [];
+                   studs(s) = [];
+                   i = i - 1;
+                end
+            end 
+        end
+        
+        % Layer 5: or any unmatched plots, find if any plot is remaining in
+        % the same position
+        for n = numel(solns):-1:1
+            solnPlot = solns(n);
+            for s = numel(studs):-1:1
+                studPlot = studs(s);
+                if isequal(solnPlot.Position,studPlot.Position)
+                   solnsOrdered(i) = solns(n);
+                   studsOrdered(i) = studs(s);
+                   solns(n) = [];
+                   studs(s) = [];
+                   i = i - 1;
+                end
+            end 
+        end
+        
+        
         for n = numel(solns):-1:1
             msg{n} = cell(0);
             solnPlot = solns(n);
-            isFound = false;
             for s = numel(studs):-1:1
                 studPlot = studs(s);
-                % if we find an equal one, remove from both
+                % if we find an equal one, add to remove from both
                 if studPlot.equals(solnPlot)
                     solns(n) = [];
                     studs(s) = [];
@@ -122,72 +212,8 @@ BAD_FONT_FACTOR = 3;
                     data.solution = [];
                 end
             end
-            if ~isFound
-                % we couldn't find an equal one. Loop through and find
-                % "closest" one, compare and report
-                
-                % * First, plots with the exact same segments and points
-                % should match up
-                % 
-                % * If no, then recheck - this time, just look at raw X, Y,
-                % and Z data. If it matches, then that's our plot
-                %
-                % * If no, then we can't really be sure what they meant.
-                % Look at the Title
-                %
-                % * If no, then look at position (subplot)
-                %
-                % * If all else fails, pick one at random
-                isFound = false;
-                for s = numel(studs):-1:1
-                    studPlot = studs(s);
-                    % Check all segments and points, separately. 
-                    if studPlot.dataEquals(solnPlot)
-                        % exact match!
-                        isFound = true;
-                        break;
-                    end
-                end
-                
-                if ~isFound
-                    % Data Match failed; check raw X, Y, Z
-                    for s = numel(studs):-1:1
-                        studPlot = studs(s);
-                        % if ismember is all true, match!
-                        if studPlot.pointEquals(solnPlot)
-                            isFound = true;
-                            break;
-                        end
-                    end
-                end
-                
-                if ~isFound
-                    % Data never matched; try next (Title)
-                    for s = numel(studs):-1:1
-                        studPlot = studs(s);
-                        if strcmpi(studPlot.Title, solnPlot.Title)
-                            isFound = true;
-                            break;
-                        end
-                    end
-                end
-                if ~isFound
-                    % Title never matched; look for plot in same position
-                    for s = numel(studs):-1:1
-                        studPlot = studs(s);
-                        if isequal(studPlot.Position, solnPlot.Position)
-                            isFound = true;
-                            break;
-                        end
-                    end
-                end
-                
-                if ~isFound
-                    % we can't find anything. Just get first and engage
-                    studPlot = studs(1);
-                    warning('We couldn''t find a good match for this plot, so take any feedback with a grain of salt');
-                end
-                eq = false;
+            
+        end 
                 %
                 % Feedback is given as bolding and/or changing colors. The
                 % following should be considered:
@@ -425,7 +451,6 @@ BAD_FONT_FACTOR = 3;
         end
     end
 
-end
 
 function plots = populatePlots()
     % Get all handles; since the Position is captured, that can be used
