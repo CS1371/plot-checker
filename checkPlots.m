@@ -110,6 +110,7 @@ BAD_FONT_FACTOR = 3;
         i = numel(solns);
         % First, find any plots that are exactly equal:
         for n = numel(solns):-1:1
+            msg{n} = cell(0);
             solnPlot = solns(n);
             for s = numel(studs):-1:1
                 studPlot = studs(s);
@@ -196,24 +197,23 @@ BAD_FONT_FACTOR = 3;
             end 
         end
         
-        
+        % Layer 5: or any unmatched plots, find if any plot remaining has
+        % the same title
         for n = numel(solns):-1:1
-            msg{n} = cell(0);
             solnPlot = solns(n);
             for s = numel(studs):-1:1
                 studPlot = studs(s);
-                % if we find an equal one, add to remove from both
-                if studPlot.equals(solnPlot)
-                    solns(n) = [];
-                    studs(s) = [];
-                    isFound = true;
-                    eq = true;
-                    data.student = [];
-                    data.solution = [];
+                if isequal(solnPlot.Title,studPlot.Title)
+                   solnsOrdered(i) = solns(n);
+                   studsOrdered(i) = studs(s);
+                   solns(n) = [];
+                   studs(s) = [];
+                   i = i - 1;
                 end
-            end
-            
-        end 
+            end 
+        end
+        
+ 
                 %
                 % Feedback is given as bolding and/or changing colors. The
                 % following should be considered:
