@@ -199,14 +199,33 @@ function [eq, msg, data] = checkPlots(fun, varargin)
             studs(1) = [];
         end
         msg = cell(1, numel(solnsOrdered));
-        data = cell(1, numel(solnsOrdered));
-        for n = 1:numel(solnsOrdered)
-            [msg{n}, data] = createView(solnPlot, studPlot, n, ...
+        for n = numel(solnsOrdered):-1:1
+            [msg{n}, data(n)] = createView(solnPlot, studPlot, n, ...
                     'solutionFigure', solutionFigure, ...
                     'studentFigure', studentFigure);
         end
+        
         msg = [msg{:}];
         if ~isempty(msg)
+            % create button
+            pts = [data.studPoints, ...
+                data.studSegments, ...
+                data.solnPoints, ...
+                data.solnSegments];
+            BTN_WIDTH = 200;
+            BTN_HEIGHT = 20;
+            tmpPosn = solutionFigure.Position;
+            
+            posn = [(tmpPosn(3) - BTN_WIDTH) / 2, ...
+                tmpPosn(4) - BTN_HEIGHT - 5, ...
+                BTN_WIDTH, BTN_HEIGHT];
+            uicontrol(solutionFigure, ...
+                'style', 'pushbutton', ...
+                'String', 'Hide correct data', ...
+                'Callback', {@toggleVisibility, pts}, ...
+                'HorizontalAlignment', 'center', ...
+                'Position', posn, ...
+                'FontSize', 20);
             msg = strjoin(msg, newline);
             solutionFigure.Visible = 'on';
             studentFigure.Visible = 'on';
@@ -285,6 +304,10 @@ BAD_FONT_FACTOR = 3;
     % 
     % Start by creating two plots.
     %%% Title
+    data.solnSegments = reshape(plot([]), 1, 0);
+    data.studSegments = reshape(plot([]), 1, 0);
+    data.solnPoints = reshape(plot([]), 1, 0);
+    data.studPoints = reshape(plot([]), 1, 0);
     message = cell(0);
     solutionAxes = axes(solutionFigure, ...
         'Position', solnPlot.Position, ...
@@ -491,6 +514,12 @@ BAD_FONT_FACTOR = 3;
     end
 end
 
-function toggleVisibility(segs)
-    
+function toggleVisibility(button, ~, segs)
+    if ~isempty(segs) && strcmpi(segs(1).Visible, 'on')
+        [segs.Visible] = deal('off');
+        button.String = 'Show correct data';
+    elseif ~isempty(segs)
+        [segs.Visible] = deal('on');
+        button.String = 'Hide correct data';
+    end
 end
