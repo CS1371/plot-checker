@@ -28,7 +28,7 @@
 % Any exceptions thrown by the student are caught and re-issued as
 % warnings.
 %
-function [eq, msg, data] = checkPlots(fun, varargin)
+function [eq, msg] = checkPlots(fun, varargin)
 %#ok<*LAXES>
     % try to convert to function handle
     if ischar(fun)
@@ -207,6 +207,7 @@ function [eq, msg, data] = checkPlots(fun, varargin)
         
         msg = [msg{:}];
         if ~isempty(msg)
+            eq = false;
             % create button
             pts = [data.studPoints, ...
                 data.studSegments, ...
@@ -230,6 +231,7 @@ function [eq, msg, data] = checkPlots(fun, varargin)
             solutionFigure.Visible = 'on';
             studentFigure.Visible = 'on';
         else
+            eq = true;
             close(studentFigure);
             close(solutionFigure);
         end

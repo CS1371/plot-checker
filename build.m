@@ -17,6 +17,8 @@ function build
     delete(['.' filesep 'release' filesep '*']);
     % pcode Plot
     pcode('Plot.m');
+    pcode('Segment.m');
+    pcode('Point.m');
     pcode('checkPlots.m');
     movefile('*.p', ['.' filesep 'release']);
     

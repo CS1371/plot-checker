@@ -4,9 +4,9 @@
 %
 function fiveLinePass_soln
     hold on;
-    plot(1:100, 1:100, 'b--');
+    plot(1:120, 1:120, 'b--');
     plot(2:200, 200:-1:2, 'k-');
     plot(5:-1:1, 10:-1:6, 'c*-.');
-    plot(1:2:100, 1:2:100, 'kd');
+    plot(1:2:104, 1:2:104, 'kd');
     plot(1, 3, 'v');
 end
