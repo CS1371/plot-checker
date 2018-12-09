@@ -200,9 +200,11 @@ function [eq, msg] = checkPlots(fun, varargin)
         end
         msg = cell(1, numel(solnsOrdered));
         for n = numel(solnsOrdered):-1:1
-            [msg{n}, data(n)] = createView(solnPlot, studPlot, n, ...
-                    'solutionFigure', solutionFigure, ...
-                    'studentFigure', studentFigure);
+            [msg{n}, data(n)] = createView(solnsOrdered(n), ...
+                studsOrdered(n), ...
+                n, ...
+                'solutionFigure', solutionFigure, ...
+                'studentFigure', studentFigure);
         end
         
         msg = [msg{:}];
@@ -244,10 +246,8 @@ function plots = populatePlots()
     % for the subplot checking
     pHandles = findobj(0, 'type', 'axes');
     if numel(pHandles) ~= 0
-        figure('Visible','off')
         plots(numel(pHandles)) = Plot(pHandles(end));
         for i = 1:(numel(pHandles) - 1)
-            figure('Visible','off')
             plots(i) = Plot(pHandles(i));
         end
     else
