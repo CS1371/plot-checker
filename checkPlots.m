@@ -216,11 +216,11 @@ function [eq, msg] = checkPlots(fun, varargin)
                 data.solnPoints, ...
                 data.solnSegments];
             BTN_WIDTH = 200;
-            BTN_HEIGHT = 20;
+            BTN_HEIGHT = 30;
             tmpPosn = solutionFigure.Position;
             
             posn = [(tmpPosn(3) - BTN_WIDTH) / 2, ...
-                tmpPosn(4) - BTN_HEIGHT - 5, ...
+                tmpPosn(4) - BTN_HEIGHT, ...
                 BTN_WIDTH, BTN_HEIGHT];
             uicontrol(solutionFigure, ...
                 'style', 'pushbutton', ...
@@ -228,8 +228,11 @@ function [eq, msg] = checkPlots(fun, varargin)
                 'Callback', {@toggleVisibility, pts}, ...
                 'HorizontalAlignment', 'center', ...
                 'Position', posn, ...
-                'FontSize', 20);
+                'FontSize', 15);
             msg = strjoin(msg, newline);
+            tmp = studentFigure.Position(1);
+            studentFigure.Position(1) = tmp - (2 * tmp / 3);
+            solutionFigure.Position(1) = tmp + (2 * tmp / 3);
             solutionFigure.Visible = 'on';
             studentFigure.Visible = 'on';
         else
@@ -259,8 +262,6 @@ end
 %
 % createView will plot two plots together, and will show the feedback via
 % the plot itself, as well as an output message.
-%
-% M = createView(
 function [message, data] = createView(solnPlot, studPlot, n, varargin)
 p = inputParser;
 p.FunctionName = 'checkPlots';
@@ -397,6 +398,9 @@ BAD_FONT_FACTOR = 3;
     % that isn't found in STUDENTS
     segs = solnPlot.Segments;
     segs = segs(~ismember(segs, studPlot.Segments));
+    if ~isempty(segs)
+        message{end+1} = 'Lines don''t match (Styles Count!)';
+    end
     for s = numel(segs):-1:1
         seg = segs(s);
         pts = [seg.Start seg.Stop];
