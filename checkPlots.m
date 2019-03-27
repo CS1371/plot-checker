@@ -1,7 +1,39 @@
+%% checkPlots: Compare your plot with the solution
+%
+%   [match, desc] = checkPlots(funcName, funcInputs ...)
+%
+%   Inputs:
+%       (char) funcName: The name of the function you wish to check, as a
+%           character vector (do NOT include '_soln')
+%       (variable) funcInputs: The remaining inputs to this function are 
+%           the inputs that you would normally pass into the function that 
+%           you are checking.
+%
+%   Outputs:
+%       (logical) match: This will be true if the student and solution 
+%           plots are identical, and false otherwise
+%       (char) desc: A description of why the student's plot is incorrect. 
+%           If match is true, then desc is empty
+%
+%   Example:
+%       If you have a function called "testFunc" and the following test:
+%
+%           testFunc(30, true, {'cats', 'dogs'});
+%
+%       Then to check the plot produced by "testFunc" against the solution
+%       function "testFunc_soln" for this test case you would run:
+%
+%           [m, d] = checkPlots('testFunc', 30, true, {'cats', 'dogs'});
+%
+%   Note:
+%   If your function's output plot does not match the output plot of the
+%   solution, then two figures will appear showing the output of your
+%   function and the solution output, and the differences between them.
+function [eq, msg] = checkPlots(fun, varargin)
 %% checkPlots: Check Student plots against Solutions
 %
 % checkPlots will return a logical and description, representing if it
-% passed or not. If the plots aren't equal, then it will describe why.
+% passed or not. If the plots aren't equal, it will describe why.
 %
 % E = checkPlots(F, I1, I2, ...) will use the function F and input
 % arguments I1, I2, ... to check if the student's code produces the same
@@ -19,17 +51,9 @@
 % You must ensure that the function and its solution (fun_soln.p) exist in
 % the current folder.
 %
-%
 % The offending plot will be shown side-by-side with its
 % corresponding solution in a new figure window.
 %
-%%% Exceptions
-%
-% Any exceptions thrown by the student are caught and re-issued as
-% warnings.
-%
-function [eq, msg] = checkPlots(fun, varargin)
-%#ok<*LAXES>
     % try to convert to function handle
     if ischar(fun)
         % if has extension, remove
