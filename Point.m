@@ -47,9 +47,12 @@ classdef Point < handle
             % makes the points. Give it a 1x2 vec or a 1x3 vec. Doesnt
             % matter. Give it one input if there is no marker. give it 3 if
             % there is bc color matter
+            %
+            % NOTE: We have to account for -0.000!
             if nargin == 0
                 return;
             end
+            coord(coord < eps & coord > -eps) = +0; 
             this.X = coord(1);
             this.Y = coord(2);
             if length(coord) == 3
