@@ -423,7 +423,7 @@ BAD_FONT_FACTOR = 3;
     segs = solnPlot.Segments;
     segs = segs(~ismember(segs, studPlot.Segments));
     if ~isempty(segs)
-        message{end+1} = 'Lines don''t match (Styles Count!)';
+        message{end+1} = 'Incorrect segment styles and/or data.';
     end
     for s = numel(segs):-1:1
         seg = segs(s);
@@ -440,6 +440,9 @@ BAD_FONT_FACTOR = 3;
 
     segs = studPlot.Segments;
     segs = segs(~ismember(segs, solnPlot.Segments));
+    if ~isempty(segs) && ~any(strcmp(message, 'Incorrect segment styles and/or data.'))
+        message{end+1} = 'Incorrect segment styles and/or data.';
+    end
     for s = numel(segs):-1:1
         seg = segs(s);
         pts = [seg.Start seg.Stop];
@@ -474,6 +477,9 @@ BAD_FONT_FACTOR = 3;
     end
     pts = solnPlot.Points;
     pts = pts(~ismember(pts, studPlot.Points));
+    if ~isempty(pts)
+        message{end+1} = 'Incorrect point styles and/or data.';
+    end
     for p = numel(pts):-1:1
         pt = pts(p);
         if pt.Z ~= 0
@@ -488,6 +494,9 @@ BAD_FONT_FACTOR = 3;
 
     pts = studPlot.Points;
     pts = pts(~ismember(pts, solnPlot.Points));
+    if ~isempty(pts) && ~any(strcmp(message, 'Incorrect point styles and/or data.'))
+        message{end+1} = 'Incorrect point styles and/or data.';
+    end
     for p = numel(pts):-1:1
         pt = pts(p);
         if pt.Z ~= 0
